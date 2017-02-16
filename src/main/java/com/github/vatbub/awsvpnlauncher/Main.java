@@ -373,9 +373,9 @@ public class Main {
 
             System.out.println("#########################################################################");
             System.out.println("# You can now connect to the VPN server using the following ip address: #");
-            System.out.println("# " + newInstance.getPublicIpAddress() + "\t\t\t\t\t\t\t\t\t\t\t\t\t\t   #");
+            System.out.println("# " + newInstance.getPublicIpAddress() + "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t#");
             System.out.println("# username: openvpn                                                     #");
-            System.out.println("# password: " + vpnPassword + "\t\t\t\t\t\t\t\t\t\t\t\t\t   #");
+            System.out.println("# password: " + vpnPassword + "\t\t\t\t\t\t\t\t\t\t\t\t\t\t#");
             System.out.println("#########################################################################");
             session.disconnect();
         } catch (Exception e) {
