@@ -248,6 +248,7 @@ public class Main {
                     sshConfig.put("StrictHostKeyChecking", "no");
                     JSch jsch = new JSch();
                     jsch.addIdentity(privateKey.getAbsolutePath());
+                    int retries = 0;
 
                     for (Instance instance : instances) {
                         // Connect to the instance using ssh
@@ -259,13 +260,15 @@ public class Main {
                         instanceId.add(instance.getInstanceId());
                         describeInstancesRequest.setInstanceIds(instanceId);
                         DescribeInstancesResult describeInstancesResult;
+                        newInstance = instance;
 
                         do {
                             // we're waiting
-                            describeInstancesResult = client.describeInstances(describeInstancesRequest);
-                            newInstance = describeInstancesResult.getReservations().get(0).getInstances().get(0);
 
-                            if (System.currentTimeMillis() - lastPrintTime >= 5000) {
+                            if (System.currentTimeMillis() - lastPrintTime >= Math.pow(2, retries) * 100) {
+                                retries = retries + 1;
+                                describeInstancesResult = client.describeInstances(describeInstancesRequest);
+                                newInstance = describeInstancesResult.getReservations().get(0).getInstances().get(0);
                                 lastPrintTime = System.currentTimeMillis();
                                 System.out.println("Still waiting for the instance to boot, current instance state is " + newInstance.getState().getName());
                             }
