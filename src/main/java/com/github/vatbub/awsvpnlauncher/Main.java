@@ -48,11 +48,10 @@ public class Main {
     private static final String vpnPassword = "123456";
     private static Instance newInstance;
     private static Session session;
-    private static Prefs prefs;
 
     public static void main(String[] args) {
         Common.setAppName("awsVpnLauncher");
-        prefs = new Prefs(Main.class.getName());
+        Prefs prefs = new Prefs(Main.class.getName());
         File privateKey;
 
         if (args.length == 0) {
