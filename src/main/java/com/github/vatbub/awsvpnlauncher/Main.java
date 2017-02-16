@@ -40,6 +40,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -276,7 +277,11 @@ public class Main {
                         System.out.println("Instance is " + newInstance.getState().getName());
 
                         // write the instance id to a properties file to be able to terminate it later on again
-                        prefs.setPreference("instanceID", newInstance.getInstanceId());
+                        if (prefs.getPreference("instanceIDs", "").equals("")) {
+                            prefs.setPreference("instanceIDs", newInstance.getInstanceId());
+                        } else {
+                            prefs.setPreference("instanceIDs", prefs.getPreference("instanceIDs", "") + ";" + newInstance.getInstanceId());
+                        }
 
                         // generate the ssh ip of the instance
                         String sshIp = newInstance.getPublicDnsName();
@@ -328,23 +333,22 @@ public class Main {
                 }
                 break;
             case "terminate":
-                String instanceId = prefs.getPreference("instanceID", "");
-                if (instanceId.equals("")) {
+                String instanceIdsPrefValue = prefs.getPreference("instanceIDs", "");
+                if (instanceIdsPrefValue.equals("")) {
                     throw new IllegalStateException("No instance was started with this script so no instance can be terminated. Launch a new instance using the launch command prior to terminate it.");
                 }
 
                 System.out.println("Sending the termination request to AWS EC2...");
-                List<String> instanceIds = new ArrayList<>(1);
-                instanceIds.add(instanceId);
+                List<String> instanceIds = Arrays.asList(instanceIdsPrefValue.split(";"));
                 TerminateInstancesRequest request = new TerminateInstancesRequest(instanceIds);
                 TerminateInstancesResult result = client.terminateInstances(request);
 
-                for (InstanceStateChange item:result.getTerminatingInstances()){
+                for (InstanceStateChange item : result.getTerminatingInstances()) {
                     System.out.println("Terminated instance: " + item.getInstanceId() + ", instance state changed from " + item.getPreviousState() + " to " + item.getCurrentState());
                 }
 
                 // Delete the config value
-                prefs.setPreference("instanceID", "");
+                prefs.setPreference("instanceIDs", "");
                 break;
             default:
                 printHelpMessage();
