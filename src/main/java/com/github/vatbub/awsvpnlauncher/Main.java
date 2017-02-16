@@ -289,6 +289,9 @@ public class Main {
             }
         } catch (JSchException | IOException e) {
             e.printStackTrace();
+            if (session != null) {
+                session.disconnect();
+            }
             System.exit(1);
         }
     }
@@ -296,9 +299,6 @@ public class Main {
     private static void cont() {
         try {
             System.out.println();
-            System.out.println("Configuration finished, closing the ssh connection");
-            session.setOutputStream(null);
-            session.disconnect();
             System.out.println("Opening the admin UI to accept the license agreement...");
 
             Internet.openInDefaultBrowser(new URL("http://" + newInstance.getPublicIpAddress() + ":943/admin"));
@@ -311,8 +311,10 @@ public class Main {
             System.out.println("Once that is done, you can connect to the VPN server using the following ip address:");
             System.out.println(newInstance.getPublicIpAddress());
             System.out.println("Use the same credentials like in the admin UI.");
+            session.disconnect();
         } catch (Exception e) {
             e.printStackTrace();
+            session.disconnect();
             System.exit(1);
         }
     }
@@ -336,7 +338,7 @@ public class Main {
         public void write(@NotNull byte b[], int off, int len) {
             super.write(b, off, len);
             try {
-                String s =  new String(b, "US-ASCII");
+                String s = new String(b, "US-ASCII");
                 if (s.contains("password updated successfully")) {
                     // continue
                     cont();
