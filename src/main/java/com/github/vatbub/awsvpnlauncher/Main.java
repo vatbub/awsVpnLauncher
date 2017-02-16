@@ -277,6 +277,7 @@ public class Main {
                         System.out.println("Instance is " + newInstance.getState().getName());
 
                         // write the instance id to a properties file to be able to terminate it later on again
+                        prefs.reload();
                         if (prefs.getPreference("instanceIDs", "").equals("")) {
                             prefs.setPreference("instanceIDs", newInstance.getInstanceId());
                         } else {
