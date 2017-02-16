@@ -301,7 +301,7 @@ public class Main {
             System.out.println();
             System.out.println("Opening the admin UI to accept the license agreement...");
 
-            Internet.openInDefaultBrowser(new URL("http://" + newInstance.getPublicIpAddress() + ":943/admin"));
+            Internet.openInDefaultBrowser(new URL("https://" + newInstance.getPublicIpAddress() + ":943/admin"));
 
             System.out.println("Please login with the following credentials:");
             System.out.println("username: openvpn");
