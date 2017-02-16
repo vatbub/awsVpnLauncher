@@ -278,7 +278,9 @@ public class Main {
                                 describeInstancesResult = client.describeInstances(describeInstancesRequest);
                                 newInstance = describeInstancesResult.getReservations().get(0).getInstances().get(0);
                                 lastPrintTime = System.currentTimeMillis();
-                                System.out.println("Still waiting for the instance to boot, current instance state is " + newInstance.getState().getName());
+                                if (newInstance.getState().getCode() != 16) {
+                                    System.out.println("Still waiting for the instance to boot, current instance state is " + newInstance.getState().getName());
+                                }
                             }
                         } while (newInstance.getState().getCode() != 16);
 
