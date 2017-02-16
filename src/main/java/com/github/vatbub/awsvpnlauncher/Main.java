@@ -34,11 +34,9 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import common.Common;
 import common.Prefs;
-import common.internet.Internet;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -358,18 +356,11 @@ public class Main {
     private static void cont() {
         try {
             System.out.println();
-            System.out.println("Opening the admin UI to accept the license agreement...");
 
-            Internet.openInDefaultBrowser(new URL("https://" + newInstance.getPublicIpAddress() + ":943/admin"));
-
-            System.out.println("Please login with the following credentials:");
+            System.out.println("You can now connect to the VPN server using the following ip address:");
+            System.out.println(newInstance.getPublicIpAddress());
             System.out.println("username: openvpn");
             System.out.println("password: " + vpnPassword);
-            System.out.println("...and accept the license agreement.");
-            System.out.println();
-            System.out.println("Once that is done, you can connect to the VPN server using the following ip address:");
-            System.out.println(newInstance.getPublicIpAddress());
-            System.out.println("Use the same credentials like in the admin UI.");
             session.disconnect();
         } catch (Exception e) {
             e.printStackTrace();
