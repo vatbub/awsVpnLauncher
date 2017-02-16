@@ -64,4 +64,23 @@
             <version>0.1.54</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Create the jar-with-dependencies -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>buildMainExecutableJar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
