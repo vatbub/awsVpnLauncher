@@ -251,6 +251,14 @@ public class Main {
                     int retries = 0;
 
                     for (Instance instance : instances) {
+                        // write the instance id to a properties file to be able to terminate it later on again
+                        prefs.reload();
+                        if (prefs.getPreference("instanceIDs", "").equals("")) {
+                            prefs.setPreference("instanceIDs", instance.getInstanceId());
+                        } else {
+                            prefs.setPreference("instanceIDs", prefs.getPreference("instanceIDs", "") + ";" + newInstance.getInstanceId());
+                        }
+
                         // Connect to the instance using ssh
                         System.out.println("Waiting for the instance to boot...");
 
@@ -275,14 +283,6 @@ public class Main {
                         } while (newInstance.getState().getCode() != 16);
 
                         System.out.println("Instance is " + newInstance.getState().getName());
-
-                        // write the instance id to a properties file to be able to terminate it later on again
-                        prefs.reload();
-                        if (prefs.getPreference("instanceIDs", "").equals("")) {
-                            prefs.setPreference("instanceIDs", newInstance.getInstanceId());
-                        } else {
-                            prefs.setPreference("instanceIDs", prefs.getPreference("instanceIDs", "") + ";" + newInstance.getInstanceId());
-                        }
 
                         // generate the ssh ip of the instance
                         String sshIp = newInstance.getPublicDnsName();
