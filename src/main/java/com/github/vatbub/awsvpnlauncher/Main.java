@@ -256,7 +256,7 @@ public class Main {
                         if (prefs.getPreference("instanceIDs", "").equals("")) {
                             prefs.setPreference("instanceIDs", instance.getInstanceId());
                         } else {
-                            prefs.setPreference("instanceIDs", prefs.getPreference("instanceIDs", "") + ";" + newInstance.getInstanceId());
+                            prefs.setPreference("instanceIDs", prefs.getPreference("instanceIDs", "") + ";" + instance.getInstanceId());
                         }
 
                         // Connect to the instance using ssh
