@@ -34,11 +34,11 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import common.Common;
 import common.Prefs;
-import common.internet.Internet;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.SystemUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -46,6 +46,8 @@ import java.util.Properties;
 
 public class Main {
     private static final String vpnPassword = "123456";
+    private static final String openVPNConfigFileNamePattern = "openVPNConfig-<ip>.ovpn";
+    private static final String openVPNAuthFileNamePattern = "openVPNAuth-<ip>.txt";
     private static Instance newInstance;
     private static Session session;
 
@@ -340,6 +342,21 @@ public class Main {
 
                 System.out.println("Sending the termination request to AWS EC2...");
                 List<String> instanceIds = Arrays.asList(instanceIdsPrefValue.split(";"));
+
+                // get their ips to remove the corresponding config files
+                DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
+                describeInstancesRequest.setInstanceIds(instanceIds);
+                DescribeInstancesResult describeInstancesResult = client.describeInstances(describeInstancesRequest);
+
+                for (Reservation reservation : describeInstancesResult.getReservations()) {
+                    for (Instance instance : reservation.getInstances()) {
+                        // auth file
+                        new File(Common.getAndCreateAppDataPath() + openVPNAuthFileNamePattern.replace("<ip>", instance.getPublicIpAddress().replace(".", "-") + ".txt")).delete();
+                        // config file
+                        new File(Common.getAndCreateAppDataPath() + openVPNConfigFileNamePattern.replace("<ip>", instance.getPublicIpAddress().replace(".", "-") + ".txt")).delete();
+                    }
+                }
+
                 TerminateInstancesRequest request = new TerminateInstancesRequest(instanceIds);
                 TerminateInstancesResult result = client.terminateInstances(request);
 
@@ -358,7 +375,7 @@ public class Main {
     private static void cont() {
         try {
             System.out.println();
-            System.out.println("Opening the admin UI to accept the license agreement...");
+            /*System.out.println("Opening the admin UI to accept the license agreement...");
 
             Internet.openInDefaultBrowser(new URL("https://" + newInstance.getPublicIpAddress() + ":943/admin"));
 
@@ -369,7 +386,110 @@ public class Main {
             System.out.println();
             System.out.println("Once that is done, you can connect to the VPN server using the following ip address:");
             System.out.println(newInstance.getPublicIpAddress());
-            System.out.println("Use the same credentials like in the admin UI.");
+            System.out.println("Use the same credentials like in the admin UI.");*/
+
+            // Create the openVPN Config files
+            System.out.println("Creating the openVPN Client config files...");
+            String authFileContent = "openvpn\n" + vpnPassword;
+            File authFile = new File(Common.getAndCreateAppDataPath() + openVPNAuthFileNamePattern.replace("<ip>", newInstance.getPublicIpAddress().replace(".", "-") + ".txt"));
+            FileUtils.writeStringToFile(authFile, authFileContent, "UTF-8");
+
+            String openVPNConfigContent = "# Automatically generated OpenVPN client config file\n" +
+                    "# Generated on " + Common.getCurrentTimeStamp() + " by " + Common.getAppName() + "\n" +
+                    "# Note: this config file contains inline private keys\n" +
+                    "#       and therefore should be kept confidential!\n" +
+                    "# Note: this configuration is user-locked to the username below\n" +
+                    "# OVPN_ACCESS_SERVER_USERNAME=openvpn\n" +
+                    "setenv FORWARD_COMPATIBLE 1\n" +
+                    "client\n" +
+                    "server-poll-timeout 4\n" +
+                    "nobind\n" +
+                    "remote " + newInstance.getPublicIpAddress() + " 1194 udp\n" +
+                    "remote " + newInstance.getPublicIpAddress() + " 1194 udp\n" +
+                    "remote " + newInstance.getPublicIpAddress() + " 443 tcp\n" +
+                    "remote " + newInstance.getPublicIpAddress() + " 1194 udp\n" +
+                    "remote " + newInstance.getPublicIpAddress() + " 1194 udp\n" +
+                    "remote " + newInstance.getPublicIpAddress() + " 1194 udp\n" +
+                    "remote " + newInstance.getPublicIpAddress() + " 1194 udp\n" +
+                    "remote " + newInstance.getPublicIpAddress() + " 1194 udp\n" +
+                    "dev tun\n" +
+                    "dev-type tun\n" +
+                    "ns-cert-type server\n" +
+                    "reneg-sec 604800\n" +
+                    "sndbuf 100000\n" +
+                    "rcvbuf 100000\n" +
+                    "auth-user-pass " + authFile.getName() + "\n" +
+                    "# NOTE: LZO commands are pushed by the Access Server at connect time.\n" +
+                    "# NOTE: The below line doesn't disable LZO.\n" +
+                    "comp-lzo no\n" +
+                    "verb 3\n" +
+                    "setenv PUSH_PEER_INFO";
+            File openVPNConfigFile = new File(Common.getAndCreateAppDataPath() + openVPNConfigFileNamePattern.replace("<ip>", newInstance.getPublicIpAddress().replace(".", "-")));
+            FileUtils.writeStringToFile(openVPNConfigFile, openVPNConfigContent, "UTF-8");
+
+            // client location
+            // C:\Program Files (x86)\OpenVPN Technologies\OpenVPN Client\core\openvpn32.exe
+            String openVpnExec;
+            if (SystemUtils.IS_OS_WINDOWS) {
+                if (SystemUtils.OS_ARCH.contains("64")) {
+                    // 64 bit os
+                    openVpnExec = "\"C:\\Program Files (x86)\\OpenVPN Technologies\\OpenVPN Client\\core\\openvpn32.exe\"";
+                } else {
+                    // 32 bit os
+                    openVpnExec = "\"C:\\Program Files \\OpenVPN Technologies\\OpenVPN Client\\core\\openvpn32.exe\"";
+                }
+            } else if (SystemUtils.IS_OS_MAC) {
+                openVpnExec = "sudo /usr/local/etc/openvpn/openvpn";
+            } else {
+                // some form of linux
+                openVpnExec = "openvpn";
+            }
+
+            String openVPNLaunchCommand = openVpnExec + " --config " + openVPNConfigFile.getAbsolutePath() + " --management 127.0.0.1 23";
+
+            // run openvpn
+            System.out.println("Running openVPN, launch command is:");
+            System.out.println(openVPNLaunchCommand);
+
+            Process process = Runtime.getRuntime().exec(openVPNLaunchCommand);
+
+            BufferedReader stdInput = new BufferedReader(new
+                    InputStreamReader(process.getInputStream()));
+
+            BufferedReader stdError = new BufferedReader(new
+                    InputStreamReader(process.getErrorStream()));
+
+            Thread stdOutThread = new Thread(() -> {
+                // read the output from the command
+                String s;
+                try {
+                    while ((s = stdInput.readLine()) != null) {
+                        System.out.println(s);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            stdOutThread.setName("stdOutThread");
+            stdOutThread.start();
+
+            Thread stdErrThread = new Thread(() -> {
+                // read any errors from the attempted command
+                String s;
+                try {
+                    while ((s = stdError.readLine()) != null) {
+                        System.out.println(s);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            stdErrThread.setName("stdErrThread");
+            stdErrThread.start();
+
+            stdOutThread.join();
+            stdErrThread.join();
+
             session.disconnect();
         } catch (Exception e) {
             e.printStackTrace();
