@@ -34,6 +34,7 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import common.Common;
 import common.Prefs;
+import logging.FOKLogger;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -43,323 +44,276 @@ import java.util.List;
 import java.util.Properties;
 
 public class Main {
-    private static final String vpnPassword = "123456";
+    // internal config
+    private static final String securityGroupName = "AWSVPNSecurityGroup";
+    private static final String sshUsername = "openvpnas";
+    private static final String adminUsername = "openvpn";
+
     private static Instance newInstance;
     private static Session session;
+    private static Prefs prefs;
+    private static AmazonEC2 client;
+    private static Regions awsRegion;
+    private static String vpnUser;
+    private static String vpnPassword;
 
     public static void main(String[] args) {
         Common.setAppName("awsVpnLauncher");
-        Prefs prefs = new Prefs(Main.class.getName());
-        File privateKey;
+        prefs = new Prefs(Main.class.getName());
 
         if (args.length == 0) {
             // not enough arguments
             printHelpMessage();
-            System.exit(2);
+            throw new NotEnoughArgumentsException();
         }
-
-        String awsKey = (new Object() {
-            int t;
-
-            public String toString() {
-                byte[] buf = new byte[20];
-                t = -1083227804;
-                buf[0] = (byte) (t >>> 8);
-                t = -1962093388;
-                buf[1] = (byte) (t >>> 4);
-                t = -1194407646;
-                buf[2] = (byte) (t >>> 5);
-                t = -
-                        1370159793;
-                buf[3] = (byte) (t >>> 10);
-                t = 282143539;
-                buf[4] = (byte) (t >>> 10);
-                t = 1733959188;
-                buf[5] = (byte) (t >>> 16);
-                t = -1492760404;
-                buf[6] = (byte) (t >>> 1);
-                t = -2071896492;
-                buf[7] = (byte) (t >>> 10
-                );
-                t = -1273687698;
-                buf[8] = (byte) (t >>> 6);
-                t = -1828138435;
-                buf[9] = (byte) (t >>> 6);
-                t = 1622445988;
-                buf[10] = (byte) (t >>> 9);
-                t = 463029258;
-                buf[11] = (byte) (t >>> 10);
-                t = -355991668;
-                buf[12] = (byte) (t
-                        >>> 19);
-                t = 836828460;
-                buf[13] = (byte) (t >>> 2);
-                t = -350703082;
-                buf[14] = (byte) (t >>> 9);
-                t = -1541080490;
-                buf[15] = (byte) (t >>> 3);
-                t = 1231704871;
-                buf[16] = (byte) (t >>> 24);
-                t = -1709599420;
-                buf[17] =
-                        (byte) (t >>> 23);
-                t = -1970709321;
-                buf[18] = (byte) (t >>> 21);
-                t = -365523679;
-                buf[19] = (byte) (t >>> 21);
-                return new String(buf);
-            }
-        }.toString());
-        String awsSecret = (new Object() {
-            int t;
-
-            public String toString() {
-                byte[] buf = new byte[40];
-                t = 1112404918;
-                buf[0] = (byte) (t >>> 19);
-                t = -1816896949;
-                buf[1] = (byte) (t >>> 8);
-                t = -1327799348;
-                buf[2] = (byte) (t >>> 11);
-                t =
-                        1882503416;
-                buf[3] = (byte) (t >>> 7);
-                t = 658940669;
-                buf[4] = (byte) (t >>> 23);
-                t = 441007082;
-                buf[5] = (byte) (t >>> 7);
-                t = 1905570113;
-                buf[6] = (byte) (t >>> 9);
-                t = -1429355764;
-                buf[7] = (byte) (t >>> 19);
-                t
-                        = -249344285;
-                buf[8] = (byte) (t >>> 18);
-                t = -910408085;
-                buf[9] = (byte) (t >>> 1);
-                t = -120132456;
-                buf[10] = (byte) (t >>> 17);
-                t = -751705966;
-                buf[11] = (byte) (t >>> 22);
-                t = 1184250066;
-                buf[12] = (byte) (t >>> 20);
-                t = -1014155600;
-                buf[13] = (byte) (t >>> 4);
-                t = 820949590;
-                buf[14] = (byte) (t >>> 23);
-                t = -1322221287;
-                buf[15] = (byte) (t >>> 23);
-                t = -1664104436;
-                buf[16] = (byte) (t >>> 17);
-                t = 449691796;
-                buf[17] = (
-                        byte) (t >>> 13);
-                t = -1278300651;
-                buf[18] = (byte) (t >>> 23);
-                t = -287886732;
-                buf[19] = (byte) (t >>> 3);
-                t = 1319628834;
-                buf[20] = (byte) (t >>> 24);
-                t = -2070447047;
-                buf[21] = (byte) (t >>> 20);
-                t = 1756182275
-                ;
-                buf[22] = (byte) (t >>> 7);
-                t = -1550201367;
-                buf[23] = (byte) (t >>> 20);
-                t = 1722574718;
-                buf[24] = (byte) (t >>> 15);
-                t = 1575077215;
-                buf[25] = (byte) (t >>> 11);
-                t = -1965213456;
-                buf[26] = (byte) (t >>> 1);
-                t =
-                        -1710328237;
-                buf[27] = (byte) (t >>> 22);
-                t = -768004646;
-                buf[28] = (byte) (t >>> 16);
-                t = 477260859;
-                buf[29] = (byte) (t >>> 23);
-                t = -791219194;
-                buf[30] = (byte) (t >>> 22);
-                t = 900689665;
-                buf[31] = (byte) (t >>> 20);
-                t = 623305415;
-                buf[32] = (byte) (t >>> 15);
-                t = 2000480341;
-                buf[33] = (byte) (t >>> 5);
-                t = 307784922;
-                buf[34] = (byte) (t >>> 19);
-                t = 883997700;
-                buf[35] = (byte) (t >>> 15);
-                t = -375755588;
-                buf[36] = (byte) (t >>> 2);
-                t = 333769770;
-                buf[37] = (byte) (t >>> 22);
-                t = 562913115;
-                buf[38] = (byte) (t >>> 23);
-                t = 1830982949;
-                buf[39] = (byte) (t >>> 15);
-                return new String(buf);
-            }
-        }.toString());
-
-        AWSCredentials credentials = new BasicAWSCredentials(awsKey, awsSecret);
-        AmazonEC2 client = AmazonEC2ClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(credentials)).withRegion(Regions.EU_CENTRAL_1).build();
 
         switch (args[0].toLowerCase()) {
             case "launch":
+                initAWSConnection();
+                launch();
+                break;
+            case "terminate":
+                terminate();
+                break;
+            case "config":
+                // require a second arg
+                if (args.length == 2) {
+                    // not enough arguments
+                    printHelpMessage();
+                    throw new NotEnoughArgumentsException();
+                }
+
+                config(Property.valueOf(args[1]), args[2]);
+                break;
+            case "getconfig":
+                // require a second arg
                 if (args.length == 1) {
                     // not enough arguments
                     printHelpMessage();
-                    System.exit(2);
+                    throw new NotEnoughArgumentsException();
                 }
 
-                privateKey = new File(args[1]);
-
-                if (!privateKey.exists() && !privateKey.isFile()) {
-                    printHelpMessage();
-                    System.exit(2);
-                }
-
-                System.out.println("Preparing...");
-
-                try {
-                    System.out.println("Creating the RunInstanceRequest...");
-
-                    String amiId = "ami-3f788150";
-                    String keyPairName = "SurfaceFrederikFrankfurt";
-                    List<String> securityGroups = new ArrayList<>();
-                    securityGroups.add("sg-a90c49c1");
-
-                    RunInstancesRequest request = new RunInstancesRequest(amiId, 1, 1);
-                    request.setInstanceType(InstanceType.T2Micro);
-                    request.setKeyName(keyPairName);
-                    request.setSecurityGroupIds(securityGroups);
-
-                    System.out.println("Starting the EC2 instance...");
-                    RunInstancesResult result = client.runInstances(request);
-                    List<Instance> instances = result.getReservation().getInstances();
-
-                    // SSH config
-                    System.out.println("Configuring SSH...");
-                    String sshUsername = "openvpnas";
-                    Properties sshConfig = new Properties();
-                    sshConfig.put("StrictHostKeyChecking", "no");
-                    JSch jsch = new JSch();
-                    jsch.addIdentity(privateKey.getAbsolutePath());
-                    int retries = 0;
-
-                    for (Instance instance : instances) {
-                        // write the instance id to a properties file to be able to terminate it later on again
-                        prefs.reload();
-                        if (prefs.getPreference("instanceIDs", "").equals("")) {
-                            prefs.setPreference("instanceIDs", instance.getInstanceId());
-                        } else {
-                            prefs.setPreference("instanceIDs", prefs.getPreference("instanceIDs", "") + ";" + instance.getInstanceId());
-                        }
-
-                        // Connect to the instance using ssh
-                        System.out.println("Waiting for the instance to boot...");
-
-                        long lastPrintTime = System.currentTimeMillis();
-                        DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
-                        List<String> instanceId = new ArrayList<>(1);
-                        instanceId.add(instance.getInstanceId());
-                        describeInstancesRequest.setInstanceIds(instanceId);
-                        DescribeInstancesResult describeInstancesResult;
-                        newInstance = instance;
-
-                        do {
-                            // we're waiting
-
-                            if (System.currentTimeMillis() - lastPrintTime >= Math.pow(2, retries) * 100) {
-                                retries = retries + 1;
-                                describeInstancesResult = client.describeInstances(describeInstancesRequest);
-                                newInstance = describeInstancesResult.getReservations().get(0).getInstances().get(0);
-                                lastPrintTime = System.currentTimeMillis();
-                                if (newInstance.getState().getCode() != 16) {
-                                    System.out.println("Still waiting for the instance to boot, current instance state is " + newInstance.getState().getName());
-                                }
-                            }
-                        } while (newInstance.getState().getCode() != 16);
-
-                        System.out.println("Instance is " + newInstance.getState().getName());
-
-                        // generate the ssh ip of the instance
-                        String sshIp = newInstance.getPublicDnsName();
-
-                        System.out.println("The instance id is " + newInstance.getInstanceId());
-                        System.out.println("The instance ip is " + newInstance.getPublicIpAddress());
-                        System.out.println("Connecting using ssh to " + sshUsername + "@" + sshIp);
-                        System.out.println("The instance will need some time to configure ssh on its end so some connection timeouts are normal");
-                        boolean retry;
-                        session = jsch.getSession(sshUsername, sshIp, 22);
-                        session.setConfig(sshConfig);
-                        do {
-                            try {
-                                session.connect();
-                                retry = false;
-                            } catch (Exception e) {
-                                System.out.println(e.getClass().getName() + ": " + e.getMessage() + ", retrying, Press Ctrl+C to cancel");
-                                retry = true;
-                            }
-                        } while (retry);
-
-                        System.out.println("----------------------------------------------------------------------");
-                        System.out.println("The following is the out- and input of the ssh session.");
-                        System.out.println("Please note that out- and input may appear out of sync.");
-                        System.out.println("----------------------------------------------------------------------");
-
-                        PipedInputStream sshIn = new PipedInputStream();
-                        PipedOutputStream sshIn2 = new PipedOutputStream(sshIn);
-                        PrintStream sshInCommandStream = new PrintStream(sshIn2);
-                        Channel channel = session.openChannel("shell");
-                        channel.setInputStream(sshIn);
-                        channel.setOutputStream(new MyPrintStream());
-                        channel.connect();
-
-                        sshInCommandStream.print("yes\n");
-                        sshInCommandStream.print("yes\n");
-                        sshInCommandStream.print("1\n");
-                        sshInCommandStream.print("\n");
-                        sshInCommandStream.print("\n");
-                        sshInCommandStream.print("yes\n");
-                        sshInCommandStream.print("yes\n");
-                        sshInCommandStream.print("\n");
-                        sshInCommandStream.print("\n");
-                        sshInCommandStream.print("\n");
-                        sshInCommandStream.print("\n");
-                        sshInCommandStream.print("echo -e \"" + vpnPassword + "\\n" + vpnPassword + "\" | sudo passwd openvpn\n");
-                    }
-                } catch (JSchException | IOException e) {
-                    e.printStackTrace();
-                    if (session != null) {
-                        session.disconnect();
-                    }
-                    System.exit(1);
-                }
-                break;
-            case "terminate":
-                String instanceIdsPrefValue = prefs.getPreference("instanceIDs", "");
-                if (instanceIdsPrefValue.equals("")) {
-                    throw new IllegalStateException("No instance was started with this script so no instance can be terminated. Launch a new instance using the launch command prior to terminate it.");
-                }
-
-                System.out.println("Sending the termination request to AWS EC2...");
-                List<String> instanceIds = Arrays.asList(instanceIdsPrefValue.split(";"));
-                TerminateInstancesRequest request = new TerminateInstancesRequest(instanceIds);
-                TerminateInstancesResult result = client.terminateInstances(request);
-
-                for (InstanceStateChange item : result.getTerminatingInstances()) {
-                    System.out.println("Terminated instance: " + item.getInstanceId() + ", instance state changed from " + item.getPreviousState() + " to " + item.getCurrentState());
-                }
-
-                // Delete the config value
-                prefs.setPreference("instanceIDs", "");
+                getConfig(Property.valueOf(args[1]));
                 break;
             default:
                 printHelpMessage();
+        }
+    }
+
+    private static void initAWSConnection() {
+        AWSCredentials credentials = new BasicAWSCredentials(internalGetConfig(Property.awsKey), internalGetConfig(Property.awsKey));
+        awsRegion = Regions.valueOf(internalGetConfig(Property.awsRegion));
+        client = AmazonEC2ClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(credentials)).withRegion(awsRegion).build();
+    }
+
+    private static String getAmiId(Regions region) {
+        /*
+        US East (Virginia) - ami-bc3566ab
+        US East (Ohio) - ami-10306a75
+        US West (Oregon) - ami-d3e743b3
+        US West (Northern California) - ami-4a02492a
+        EU West (Ireland) - ami-f53d7386
+        EU Central (Frankurt) - ami-ad1fe6c2
+        Asia Pacific (Singapore) - ami-a859ffcb
+        Asia Pacific (Tokyo) - ami-e9da7c88
+        Asia Pacific (Sydney) - ami-89477aea
+        South America (Sao Paulo) - ami-0c069b60
+         */
+
+        switch (region) {
+            case US_EAST_1:
+                return "ami-bc3566ab";
+            case US_EAST_2:
+                return "ami-10306a75";
+            case US_WEST_1:
+                return "ami-4a02492a";
+            case US_WEST_2:
+                return "ami-d3e743b3";
+            case EU_WEST_1:
+                return "ami-f53d7386";
+            case EU_CENTRAL_1:
+                return "ami-ad1fe6c2";
+            case AP_SOUTHEAST_1:
+                return "ami-a859ffcb";
+            case AP_SOUTHEAST_2:
+                return "ami-89477aea";
+            case AP_NORTHEAST_1:
+                return "ami-e9da7c88";
+            default:
+                throw new RegionNotSupportedException(region);
+        }
+    }
+
+    private static void launch() {
+        File privateKey = new File(internalGetConfig(Property.privateKeyFile));
+        vpnUser = internalGetConfig(Property.openvonUsername);
+        vpnPassword = internalGetConfig(Property.openvpnPassword);
+
+        if (!privateKey.exists() && !privateKey.isFile()) {
+            throw new IllegalArgumentException("The file specified as " + Property.privateKeyFile.toString() + " does not exist or is not a file.");
+        }
+
+        FOKLogger.info(Main.class.getName(), "Preparing...");
+
+        try {
+            // Check if our security group exists already
+            FOKLogger.info(Main.class.getName(), "Checking for the required security group...");
+            DescribeSecurityGroupsRequest describeSecurityGroupsRequest = new DescribeSecurityGroupsRequest().withGroupNames(securityGroupName);
+            DescribeSecurityGroupsResult describeSecurityGroupsResult = client.describeSecurityGroups(describeSecurityGroupsRequest);
+            List<String> securityGroups = new ArrayList<>();
+
+            String securityGroupId = "";
+            for (SecurityGroup securityGroup : describeSecurityGroupsResult.getSecurityGroups()) {
+                if (securityGroup.getGroupName().equals(securityGroupName)) {
+                    securityGroupId = securityGroup.getGroupId();
+                }
+            }
+
+            if (securityGroupId.equals("")) {
+                // create the security group
+                FOKLogger.info(Main.class.getName(), "Creating the required security group...");
+                CreateSecurityGroupRequest createSecurityGroupRequest = new CreateSecurityGroupRequest()
+                        .withGroupName(securityGroupName)
+                        .withDescription("This security group was automatically created to run a OpenVPN Access Server.");
+                client.createSecurityGroup(createSecurityGroupRequest);
+
+                IpRange ipRange = new IpRange().withCidrIp("0.0.0.0/0");
+                IpPermission sshPermission1 = new IpPermission().withIpv4Ranges(ipRange)
+                        .withIpProtocol("tcp")
+                        .withFromPort(22)
+                        .withToPort(22);
+                IpPermission sshPermission2 = new IpPermission().withIpv4Ranges(ipRange)
+                        .withIpProtocol("tcp")
+                        .withFromPort(943)
+                        .withToPort(943);
+                IpPermission httpsPermission1 = new IpPermission().withIpv4Ranges(ipRange)
+                        .withIpProtocol("tcp")
+                        .withFromPort(443)
+                        .withToPort(443);
+                IpPermission httpsPermission2 = new IpPermission().withIpv4Ranges(ipRange)
+                        .withIpProtocol("udp")
+                        .withFromPort(1194)
+                        .withToPort(1194);
+
+                AuthorizeSecurityGroupIngressRequest authorizeSecurityGroupIngressRequest =
+                        new AuthorizeSecurityGroupIngressRequest().withGroupName("JavaSecurityGroup")
+                                .withIpPermissions(sshPermission1)
+                                .withIpPermissions(sshPermission2)
+                                .withIpPermissions(httpsPermission1)
+                                .withIpPermissions(httpsPermission2);
+                client.authorizeSecurityGroupIngress(authorizeSecurityGroupIngressRequest);
+                FOKLogger.info(Main.class.getName(), "The required security group has been successfully created!");
+            } else {
+                FOKLogger.info(Main.class.getName(), "The required security group already exists, we can continue");
+                securityGroups.add(securityGroupId);
+            }
+
+            FOKLogger.info(Main.class.getName(), "Creating the RunInstanceRequest...");
+            RunInstancesRequest request = new RunInstancesRequest(getAmiId(awsRegion), 1, 1);
+            request.setInstanceType(InstanceType.T2Micro);
+            request.setKeyName(internalGetConfig(Property.awsKeyPairName));
+            request.setSecurityGroupIds(securityGroups);
+
+            FOKLogger.info(Main.class.getName(), "Starting the EC2 instance...");
+            RunInstancesResult result = client.runInstances(request);
+            List<Instance> instances = result.getReservation().getInstances();
+
+            // SSH config
+            FOKLogger.info(Main.class.getName(), "Configuring SSH...");
+            Properties sshConfig = new Properties();
+            sshConfig.put("StrictHostKeyChecking", "no");
+            JSch jsch = new JSch();
+            jsch.addIdentity(privateKey.getAbsolutePath());
+            int retries = 0;
+
+            for (Instance instance : instances) {
+                // write the instance id to a properties file to be able to terminate it later on again
+                prefs.reload();
+                if (prefs.getPreference("instanceIDs", "").equals("")) {
+                    prefs.setPreference("instanceIDs", instance.getInstanceId());
+                } else {
+                    prefs.setPreference("instanceIDs", prefs.getPreference("instanceIDs", "") + ";" + instance.getInstanceId());
+                }
+
+                // Connect to the instance using ssh
+                FOKLogger.info(Main.class.getName(), "Waiting for the instance to boot...");
+
+                long lastPrintTime = System.currentTimeMillis();
+                DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
+                List<String> instanceId = new ArrayList<>(1);
+                instanceId.add(instance.getInstanceId());
+                describeInstancesRequest.setInstanceIds(instanceId);
+                DescribeInstancesResult describeInstancesResult;
+                newInstance = instance;
+
+                do {
+                    // we're waiting
+
+                    if (System.currentTimeMillis() - lastPrintTime >= Math.pow(2, retries) * 100) {
+                        retries = retries + 1;
+                        describeInstancesResult = client.describeInstances(describeInstancesRequest);
+                        newInstance = describeInstancesResult.getReservations().get(0).getInstances().get(0);
+                        lastPrintTime = System.currentTimeMillis();
+                        if (newInstance.getState().getCode() != 16) {
+                            FOKLogger.info(Main.class.getName(), "Still waiting for the instance to boot, current instance state is " + newInstance.getState().getName());
+                        }
+                    }
+                } while (newInstance.getState().getCode() != 16);
+
+                FOKLogger.info(Main.class.getName(), "Instance is " + newInstance.getState().getName());
+
+                // generate the ssh ip of the instance
+                String sshIp = newInstance.getPublicDnsName();
+
+                FOKLogger.info(Main.class.getName(), "The instance id is " + newInstance.getInstanceId());
+                FOKLogger.info(Main.class.getName(), "The instance ip is " + newInstance.getPublicIpAddress());
+                FOKLogger.info(Main.class.getName(), "Connecting using ssh to " + sshUsername + "@" + sshIp);
+                FOKLogger.info(Main.class.getName(), "The instance will need some time to configure ssh on its end so some connection timeouts are normal");
+                boolean retry;
+                session = jsch.getSession(sshUsername, sshIp, 22);
+                session.setConfig(sshConfig);
+                do {
+                    try {
+                        session.connect();
+                        retry = false;
+                    } catch (Exception e) {
+                        FOKLogger.info(Main.class.getName(), e.getClass().getName() + ": " + e.getMessage() + ", retrying, Press Ctrl+C to cancel");
+                        retry = true;
+                    }
+                } while (retry);
+
+                FOKLogger.info(Main.class.getName(), "----------------------------------------------------------------------");
+                FOKLogger.info(Main.class.getName(), "The following is the out- and input of the ssh session.");
+                FOKLogger.info(Main.class.getName(), "Please note that out- and input may appear out of sync.");
+                FOKLogger.info(Main.class.getName(), "----------------------------------------------------------------------");
+
+                PipedInputStream sshIn = new PipedInputStream();
+                PipedOutputStream sshIn2 = new PipedOutputStream(sshIn);
+                PrintStream sshInCommandStream = new PrintStream(sshIn2);
+                Channel channel = session.openChannel("shell");
+                channel.setInputStream(sshIn);
+                channel.setOutputStream(new MyPrintStream());
+                channel.connect();
+
+                sshInCommandStream.print("yes\n");
+                sshInCommandStream.print("yes\n");
+                sshInCommandStream.print("1\n");
+                sshInCommandStream.print("\n");
+                sshInCommandStream.print("\n");
+                sshInCommandStream.print("yes\n");
+                sshInCommandStream.print("yes\n");
+                sshInCommandStream.print("\n");
+                sshInCommandStream.print("\n");
+                sshInCommandStream.print("\n");
+                sshInCommandStream.print("\n");
+                sshInCommandStream.print("echo -e \"" + vpnPassword + "\\n" + vpnPassword + "\" | sudo passwd " + adminUsername + "\n");
+            }
+        } catch (JSchException | IOException e) {
+            e.printStackTrace();
+            if (session != null) {
+                session.disconnect();
+            }
+            System.exit(1);
         }
     }
 
@@ -367,16 +321,23 @@ public class Main {
         try {
             System.out.println();
             System.out.println();
-            System.out.println("----------------------------------------------------------------------");
-            System.out.println("Disconnecting the SSH-session...");
-            System.out.println("----------------------------------------------------------------------");
+            FOKLogger.info(Main.class.getName(), "----------------------------------------------------------------------");
+            FOKLogger.info(Main.class.getName(), "Disconnecting the SSH-session...");
+            FOKLogger.info(Main.class.getName(), "----------------------------------------------------------------------");
 
-            System.out.println("#########################################################################");
-            System.out.println("# You can now connect to the VPN server using the following ip address: #");
-            System.out.println("# " + newInstance.getPublicIpAddress() + "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t#");
-            System.out.println("# username: openvpn                                                     #");
-            System.out.println("# password: " + vpnPassword + "\t\t\t\t\t\t\t\t\t\t\t\t\t\t#");
-            System.out.println("#########################################################################");
+            List<String> endMessage = new ArrayList<>();
+            endMessage.add("You can now connect to the VPN server using the following ip address:");
+            endMessage.add(newInstance.getPublicIpAddress());
+            endMessage.add("vpn-username: " + vpnUser);
+            endMessage.add("vpn-password: " + vpnPassword);
+            endMessage.add("admin-username: " + adminUsername);
+            endMessage.add("admin-password: " + vpnPassword);
+
+            FOKLogger.info(Main.class.getName(), "#########################################################################");
+            for (String line:endMessage){
+                FOKLogger.info(Main.class.getName(),"# " + line + getRequiredSpaces(line) + " #");
+            }
+            FOKLogger.info(Main.class.getName(), "#########################################################################");
             session.disconnect();
         } catch (Exception e) {
             e.printStackTrace();
@@ -385,20 +346,73 @@ public class Main {
         }
     }
 
+    private static String getRequiredSpaces(String message){
+        String res = "";
+        final String reference = "#########################################################################";
+        int requiredSpaces = reference.length()-message.length()-4;
+
+        for (int i=0; i<requiredSpaces; i++){
+            res = res + " ";
+        }
+
+        return res;
+    }
+
+    private static void terminate() {
+        String instanceIdsPrefValue = prefs.getPreference("instanceIDs", "");
+        if (instanceIdsPrefValue.equals("")) {
+            throw new IllegalStateException("No instance was started with this script so no instance can be terminated. Launch a new instance using the launch command prior to terminate it.");
+        }
+
+        FOKLogger.info(Main.class.getName(), "Sending the termination request to AWS EC2...");
+        List<String> instanceIds = Arrays.asList(instanceIdsPrefValue.split(";"));
+        TerminateInstancesRequest request = new TerminateInstancesRequest(instanceIds);
+        TerminateInstancesResult result = client.terminateInstances(request);
+
+        for (InstanceStateChange item : result.getTerminatingInstances()) {
+            FOKLogger.info(Main.class.getName(), "Terminated instance: " + item.getInstanceId() + ", instance state changed from " + item.getPreviousState() + " to " + item.getCurrentState());
+        }
+
+        // Delete the config value
+        prefs.setPreference("instanceIDs", "");
+    }
+
     private static void printHelpMessage() {
-        System.out.println(Common.getAppName() + ", v" + Common.getAppVersion());
-        System.out.println("Usage:");
-        System.out.println("java -jar " + Common.getPathAndNameOfCurrentJar() + " <command> <options>");
-        System.out.println();
-        System.out.println("Valid commands are:");
-        System.out.println("\tlaunch:\tlaunches a new VPN server on AWS EC2.");
-        System.out.println("\t\toptions:");
-        System.out.println("\t\t\tRequired. The fully qualified path to the private key to be used for the ssh connection to the VPN server");
-        System.out.println("\tterminate:\tTerminates a previously launched VPN server on AWS EC2. No options required");
-        System.out.println();
-        System.out.println("Examples:");
-        System.out.println("java -jar " + Common.getPathAndNameOfCurrentJar() + " launch C:\\Users\\Frederik\\.ssh\\frankfurtKey.pem");
-        System.out.println("java -jar " + Common.getPathAndNameOfCurrentJar() + " terminate");
+        FOKLogger.info(Main.class.getName(), Common.getAppName() + ", v" + Common.getAppVersion());
+        FOKLogger.info(Main.class.getName(), "Usage:");
+        FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " <command> <options>");
+        FOKLogger.info(Main.class.getName(), "");
+        FOKLogger.info(Main.class.getName(), "Valid commands are:");
+        FOKLogger.info(Main.class.getName(), "\tlaunch:\tlaunches a new VPN server on AWS EC2.");
+        FOKLogger.info(Main.class.getName(), "\t\toptions:");
+        FOKLogger.info(Main.class.getName(), "\t\t\tRequired. The fully qualified path to the private key to be used for the ssh connection to the VPN server");
+        FOKLogger.info(Main.class.getName(), "\tterminate:\tTerminates a previously launched VPN server on AWS EC2. No options required");
+        FOKLogger.info(Main.class.getName(), "");
+        FOKLogger.info(Main.class.getName(), "Examples:");
+        FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " launch C:\\Users\\Frederik\\.ssh\\frankfurtKey.pem");
+        FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " terminate");
+    }
+
+    private static void config(Property property, String value) {
+        prefs.setPreference(property.toString(), value);
+        FOKLogger.info(Main.class.getName(), "Set the preference " + property.toString() + " to " + value);
+    }
+
+    private static void getConfig(Property property) {
+        FOKLogger.info(Main.class.getName(), "Value of property " + property.toString() + " is: " + prefs.getPreference(property.toString(), "<not set>"));
+    }
+
+    private static String internalGetConfig(Property property) {
+        String res = prefs.getPreference(property.toString(), "");
+        if (res.equals("")) {
+            throw new PropertyNotConfiguredException(property);
+        } else {
+            return res;
+        }
+    }
+
+    public enum Property {
+        awsKey, awsSecret, awsKeyPairName, awsRegion, privateKeyFile, openvonUsername, openvpnPassword
     }
 
     private static class MyPrintStream extends PrintStream {
