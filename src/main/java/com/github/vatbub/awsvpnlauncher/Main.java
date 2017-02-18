@@ -146,7 +146,7 @@ public class Main {
 
     private static void launch() {
         File privateKey = new File(internalGetConfig(Property.privateKeyFile));
-        vpnUser = internalGetConfig(Property.openvonUsername);
+        vpnUser = internalGetConfig(Property.openvpnUsername);
         vpnPassword = internalGetConfig(Property.openvpnPassword);
 
         if (!privateKey.exists() && !privateKey.isFile()) {
@@ -412,7 +412,7 @@ public class Main {
     }
 
     public enum Property {
-        awsKey, awsSecret, awsKeyPairName, awsRegion, privateKeyFile, openvonUsername, openvpnPassword
+        awsKey, awsSecret, awsKeyPairName, awsRegion, privateKeyFile, openvpnUsername, openvpnPassword
     }
 
     private static class MyPrintStream extends PrintStream {
