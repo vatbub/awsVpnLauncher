@@ -159,23 +159,23 @@ public class Main {
             // Check if our security group exists already
             FOKLogger.info(Main.class.getName(), "Checking for the required security group...");
             DescribeSecurityGroupsRequest describeSecurityGroupsRequest = new DescribeSecurityGroupsRequest().withGroupNames(securityGroupName);
-            DescribeSecurityGroupsResult describeSecurityGroupsResult = client.describeSecurityGroups(describeSecurityGroupsRequest);
+
             List<String> securityGroups = new ArrayList<>();
-
+            boolean created = false; // will become true if the security group had to be created to avoid duplicate logs
             String securityGroupId = "";
-            for (SecurityGroup securityGroup : describeSecurityGroupsResult.getSecurityGroups()) {
-                if (securityGroup.getGroupName().equals(securityGroupName)) {
-                    securityGroupId = securityGroup.getGroupId();
-                }
-            }
-
-            if (securityGroupId.equals("")) {
-                // create the security group
+            try {
+                DescribeSecurityGroupsResult describeSecurityGroupsResult = client.describeSecurityGroups(describeSecurityGroupsRequest);
+                securityGroupId = describeSecurityGroupsResult.getSecurityGroups().get(0).getGroupId();
+            } catch (AmazonEC2Exception e) {
+                // Security group does not exist, create the security group
+                created = true;
                 FOKLogger.info(Main.class.getName(), "Creating the required security group...");
                 CreateSecurityGroupRequest createSecurityGroupRequest = new CreateSecurityGroupRequest()
                         .withGroupName(securityGroupName)
                         .withDescription("This security group was automatically created to run a OpenVPN Access Server.");
-                client.createSecurityGroup(createSecurityGroupRequest);
+                CreateSecurityGroupResult createSecurityGroupResult = client.createSecurityGroup(createSecurityGroupRequest);
+
+                securityGroupId = createSecurityGroupResult.getGroupId();
 
                 IpRange ipRange = new IpRange().withCidrIp("0.0.0.0/0");
                 IpPermission sshPermission1 = new IpPermission().withIpv4Ranges(ipRange)
@@ -196,17 +196,44 @@ public class Main {
                         .withToPort(1194);
 
                 AuthorizeSecurityGroupIngressRequest authorizeSecurityGroupIngressRequest =
-                        new AuthorizeSecurityGroupIngressRequest().withGroupName("JavaSecurityGroup")
+                        new AuthorizeSecurityGroupIngressRequest().withGroupName(securityGroupName)
                                 .withIpPermissions(sshPermission1)
                                 .withIpPermissions(sshPermission2)
                                 .withIpPermissions(httpsPermission1)
                                 .withIpPermissions(httpsPermission2);
-                client.authorizeSecurityGroupIngress(authorizeSecurityGroupIngressRequest);
+
+                // retry while the security group is not yet ready
+                int retries = 0;
+                long lastPollTime = System.currentTimeMillis();
+                DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
+                boolean requestIsFailing = true;
+
+                do {
+                    // we're waiting
+
+                    if (System.currentTimeMillis() - lastPollTime >= Math.pow(2, retries) * 100) {
+                        retries = retries + 1;
+                        lastPollTime = System.currentTimeMillis();
+                        try {
+                            client.authorizeSecurityGroupIngress(authorizeSecurityGroupIngressRequest);
+                            // no exception => we made it
+                            requestIsFailing = false;
+                        } catch (AmazonEC2Exception e2) {
+                            FOKLogger.severe(Main.class.getName(), e2.getMessage());
+                            requestIsFailing = true;
+                        }
+                    }
+                } while (requestIsFailing);
                 FOKLogger.info(Main.class.getName(), "The required security group has been successfully created!");
-            } else {
-                FOKLogger.info(Main.class.getName(), "The required security group already exists, we can continue");
-                securityGroups.add(securityGroupId);
             }
+
+            if (!created) {
+                FOKLogger.info(Main.class.getName(), "The required security group already exists, we can continue");
+            }
+            securityGroups.add(securityGroupId);
+
+            FOKLogger.info(Main.class.getName(), "The required security group already exists, we can continue");
+            securityGroups.add(securityGroupId);
 
             FOKLogger.info(Main.class.getName(), "Creating the RunInstanceRequest...");
             RunInstancesRequest request = new RunInstancesRequest(getAmiId(awsRegion), 1, 1);
@@ -334,8 +361,8 @@ public class Main {
             endMessage.add("admin-password: " + vpnPassword);
 
             FOKLogger.info(Main.class.getName(), "#########################################################################");
-            for (String line:endMessage){
-                FOKLogger.info(Main.class.getName(),"# " + line + getRequiredSpaces(line) + " #");
+            for (String line : endMessage) {
+                FOKLogger.info(Main.class.getName(), "# " + line + getRequiredSpaces(line) + " #");
             }
             FOKLogger.info(Main.class.getName(), "#########################################################################");
             session.disconnect();
@@ -346,12 +373,12 @@ public class Main {
         }
     }
 
-    private static String getRequiredSpaces(String message){
+    private static String getRequiredSpaces(String message) {
         String res = "";
         final String reference = "#########################################################################";
-        int requiredSpaces = reference.length()-message.length()-4;
+        int requiredSpaces = reference.length() - message.length() - 4;
 
-        for (int i=0; i<requiredSpaces; i++){
+        for (int i = 0; i < requiredSpaces; i++) {
             res = res + " ";
         }
 
