@@ -101,7 +101,7 @@ public class Main {
     }
 
     private static void initAWSConnection() {
-        AWSCredentials credentials = new BasicAWSCredentials(internalGetConfig(Property.awsKey), internalGetConfig(Property.awsKey));
+        AWSCredentials credentials = new BasicAWSCredentials(internalGetConfig(Property.awsKey), internalGetConfig(Property.awsSecret));
         awsRegion = Regions.valueOf(internalGetConfig(Property.awsRegion));
         client = AmazonEC2ClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(credentials)).withRegion(awsRegion).build();
     }
