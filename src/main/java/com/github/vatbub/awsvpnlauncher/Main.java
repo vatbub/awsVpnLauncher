@@ -73,6 +73,7 @@ public class Main {
                 launch();
                 break;
             case "terminate":
+                initAWSConnection();
                 terminate();
                 break;
             case "config":
@@ -334,6 +335,7 @@ public class Main {
                 sshInCommandStream.print("\n");
                 sshInCommandStream.print("\n");
                 sshInCommandStream.print("echo -e \"" + vpnPassword + "\\n" + vpnPassword + "\" | sudo passwd " + adminUsername + "\n");
+                sshInCommandStream.print("echo -e \"" + vpnPassword + "\\n" + vpnPassword + "\n\n\n\n\n\nY\n\" | sudo adduser " + vpnUser + "\n");
             }
         } catch (JSchException | IOException e) {
             e.printStackTrace();
@@ -393,11 +395,15 @@ public class Main {
 
         FOKLogger.info(Main.class.getName(), "Sending the termination request to AWS EC2...");
         List<String> instanceIds = Arrays.asList(instanceIdsPrefValue.split(";"));
-        TerminateInstancesRequest request = new TerminateInstancesRequest(instanceIds);
-        TerminateInstancesResult result = client.terminateInstances(request);
+        for (String instanceId : instanceIds) {
+            List<String> instanceIdCopy = new ArrayList<>();
+            instanceIdCopy.add(instanceId);
+            TerminateInstancesRequest request = new TerminateInstancesRequest(instanceIdCopy);
+            TerminateInstancesResult result = client.terminateInstances(request);
 
-        for (InstanceStateChange item : result.getTerminatingInstances()) {
-            FOKLogger.info(Main.class.getName(), "Terminated instance: " + item.getInstanceId() + ", instance state changed from " + item.getPreviousState() + " to " + item.getCurrentState());
+            for (InstanceStateChange item : result.getTerminatingInstances()) {
+                FOKLogger.info(Main.class.getName(), "Terminated instance: " + item.getInstanceId() + ", instance state changed from " + item.getPreviousState() + " to " + item.getCurrentState());
+            }
         }
 
         // Delete the config value
