@@ -140,6 +140,8 @@ public class Main {
                 return "ami-89477aea";
             case AP_NORTHEAST_1:
                 return "ami-e9da7c88";
+            case SA_EAST_1:
+                return "ami-0c069b60";
             default:
                 throw new RegionNotSupportedException(region);
         }
@@ -415,13 +417,39 @@ public class Main {
         FOKLogger.info(Main.class.getName(), "");
         FOKLogger.info(Main.class.getName(), "Valid commands are:");
         FOKLogger.info(Main.class.getName(), "\tlaunch:\tlaunches a new VPN server on AWS EC2.");
+        FOKLogger.info(Main.class.getName(), "\tterminate:\tTerminates a previously launched VPN server on AWS EC2.");
+        FOKLogger.info(Main.class.getName(), "\tconfig <propertyName> <propertyValue>: Sets the value of a config property.");
         FOKLogger.info(Main.class.getName(), "\t\toptions:");
-        FOKLogger.info(Main.class.getName(), "\t\t\tRequired. The fully qualified path to the private key to be used for the ssh connection to the VPN server");
-        FOKLogger.info(Main.class.getName(), "\tterminate:\tTerminates a previously launched VPN server on AWS EC2. No options required");
+        FOKLogger.info(Main.class.getName(), "\t\t\tpropertyName:\tThe name of the property to be modified");
+        FOKLogger.info(Main.class.getName(), "\t\t\tpropertyValue:\tThe new value of the specified property");
+        FOKLogger.info(Main.class.getName(), "\tgetConfig <propertyName>: Prints the current value of the specified property.");
+        FOKLogger.info(Main.class.getName(), "\t\toptions:");
+        FOKLogger.info(Main.class.getName(), "\t\t\tpropertyName:\tThe name of the property to be printed");
+        FOKLogger.info(Main.class.getName(), "");
+        FOKLogger.info(Main.class.getName(), "Properties to be configured for a successful launch:");
+        FOKLogger.info(Main.class.getName(), "\tawsKey: The key to use to authenticate on aws. The key must have full access to EC2. Your aws credentials are stored in plain text on your hard drive.");
+        FOKLogger.info(Main.class.getName(), "\tawsSecret: The secret string that corresponds to the awsKey. Your aws credentials are stored in plain text on your hard drive.");
+        FOKLogger.info(Main.class.getName(), "\tawsKeyPairName: The name of the Public/Private keypair to be used to authenticate on the newly created EC2 instances as shown in the EC2 management console");
+        FOKLogger.info(Main.class.getName(), "\tawsRegion: The region where you want your VPN to be located. Can be either: (Only specify the key of the region like US_EAST_1, the city name is just for your orientation");
+        FOKLogger.info(Main.class.getName(), "\t\tUS_EAST_1 (Virginia)");
+        FOKLogger.info(Main.class.getName(), "\t\tUS_EAST_2 (Ohio)");
+        FOKLogger.info(Main.class.getName(), "\t\tUS_WEST_1 (Northern California)");
+        FOKLogger.info(Main.class.getName(), "\t\tUS_WEST_2 (Oregon)");
+        FOKLogger.info(Main.class.getName(), "\t\tEU_WEST_1 (Ireland)");
+        FOKLogger.info(Main.class.getName(), "\t\tEU_CENTRAL_1 (Frankfurt)");
+        FOKLogger.info(Main.class.getName(), "\t\tAP_SOUTHEAST_1 (Singapore)");
+        FOKLogger.info(Main.class.getName(), "\t\tAP_SOUTHEAST_2 (Sydney)");
+        FOKLogger.info(Main.class.getName(), "\t\tAP_NORTHEAST_1 (Tokyo)");
+        FOKLogger.info(Main.class.getName(), "\t\tSA_EAST_1 (Sao Paulo)");
+        FOKLogger.info(Main.class.getName(), "\tprivateKeyFile: The fully qualified path to the private key file to authenticate on the EC2 instance using ssh. Example: C:\\Users\\Frederik\\.ssh\\frankfurtKey.pem");
+        FOKLogger.info(Main.class.getName(), "\topenvpnPassword: The password to be set on the vpn server to access vpn and the admin area. Unfortunately, we cannot change the default username, but you can connect to the server yourself after its initial setup using ssh and add another user yourself.");
         FOKLogger.info(Main.class.getName(), "");
         FOKLogger.info(Main.class.getName(), "Examples:");
-        FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " launch C:\\Users\\Frederik\\.ssh\\frankfurtKey.pem");
+        FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " launch");
         FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " terminate");
+        FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " config awsKey <yourAwsKeyHere>");
+        FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " getConfig awsKey");
+
     }
 
     private static void config(Property property, String value) {
