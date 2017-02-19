@@ -59,6 +59,7 @@ public class Main {
 
     public static void main(String[] args) {
         Common.setAppName("awsVpnLauncher");
+        FOKLogger.enableLoggingOfUncaughtExceptions();
         prefs = new Prefs(Main.class.getName());
 
         if (args.length == 0) {
