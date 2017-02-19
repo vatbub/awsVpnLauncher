@@ -396,13 +396,17 @@ public class Main {
         FOKLogger.info(Main.class.getName(), "Sending the termination request to AWS EC2...");
         List<String> instanceIds = Arrays.asList(instanceIdsPrefValue.split(";"));
         for (String instanceId : instanceIds) {
-            List<String> instanceIdCopy = new ArrayList<>();
-            instanceIdCopy.add(instanceId);
-            TerminateInstancesRequest request = new TerminateInstancesRequest(instanceIdCopy);
-            TerminateInstancesResult result = client.terminateInstances(request);
+            try {
+                List<String> instanceIdCopy = new ArrayList<>();
+                instanceIdCopy.add(instanceId);
+                TerminateInstancesRequest request = new TerminateInstancesRequest(instanceIdCopy);
+                TerminateInstancesResult result = client.terminateInstances(request);
 
-            for (InstanceStateChange item : result.getTerminatingInstances()) {
-                FOKLogger.info(Main.class.getName(), "Terminated instance: " + item.getInstanceId() + ", instance state changed from " + item.getPreviousState() + " to " + item.getCurrentState());
+                for (InstanceStateChange item : result.getTerminatingInstances()) {
+                    FOKLogger.info(Main.class.getName(), "Terminated instance: " + item.getInstanceId() + ", instance state changed from " + item.getPreviousState() + " to " + item.getCurrentState());
+                }
+            } catch (AmazonEC2Exception e) {
+                FOKLogger.severe(Main.class.getName(), "Could not terminate instance " + instanceId + ": " + e.getMessage());
             }
         }
 
