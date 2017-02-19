@@ -221,7 +221,7 @@ public class Main {
                             // no exception => we made it
                             requestIsFailing = false;
                         } catch (AmazonEC2Exception e2) {
-                            FOKLogger.severe(Main.class.getName(), e2.getMessage());
+                            FOKLogger.info(Main.class.getName(), "Still waiting for the security group to be created, api error message is currently: " + e2.getMessage());
                             requestIsFailing = true;
                         }
                     }
