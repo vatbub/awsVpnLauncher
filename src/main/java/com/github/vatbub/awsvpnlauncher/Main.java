@@ -54,7 +54,6 @@ public class Main {
     private static Prefs prefs;
     private static AmazonEC2 client;
     private static Regions awsRegion;
-    private static String vpnUser;
     private static String vpnPassword;
 
     public static void main(String[] args) {
@@ -148,7 +147,6 @@ public class Main {
 
     private static void launch() {
         File privateKey = new File(internalGetConfig(Property.privateKeyFile));
-        vpnUser = internalGetConfig(Property.openvpnUsername);
         vpnPassword = internalGetConfig(Property.openvpnPassword);
 
         if (!privateKey.exists() && !privateKey.isFile()) {
@@ -164,7 +162,7 @@ public class Main {
 
             List<String> securityGroups = new ArrayList<>();
             boolean created = false; // will become true if the security group had to be created to avoid duplicate logs
-            String securityGroupId = "";
+            String securityGroupId;
             try {
                 DescribeSecurityGroupsResult describeSecurityGroupsResult = client.describeSecurityGroups(describeSecurityGroupsRequest);
                 securityGroupId = describeSecurityGroupsResult.getSecurityGroups().get(0).getGroupId();
@@ -207,7 +205,6 @@ public class Main {
                 // retry while the security group is not yet ready
                 int retries = 0;
                 long lastPollTime = System.currentTimeMillis();
-                DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
                 boolean requestIsFailing = true;
 
                 do {
@@ -234,7 +231,6 @@ public class Main {
             }
             securityGroups.add(securityGroupId);
 
-            FOKLogger.info(Main.class.getName(), "The required security group already exists, we can continue");
             securityGroups.add(securityGroupId);
 
             FOKLogger.info(Main.class.getName(), "Creating the RunInstanceRequest...");
@@ -336,7 +332,6 @@ public class Main {
                 sshInCommandStream.print("\n");
                 sshInCommandStream.print("\n");
                 sshInCommandStream.print("echo -e \"" + vpnPassword + "\\n" + vpnPassword + "\" | sudo passwd " + adminUsername + "\n");
-                sshInCommandStream.print("echo -e \"" + vpnPassword + "\\n" + vpnPassword + "\n\n\n\n\n\nY\n\" | sudo adduser " + vpnUser + "\n");
             }
         } catch (JSchException | IOException e) {
             e.printStackTrace();
@@ -358,10 +353,8 @@ public class Main {
             List<String> endMessage = new ArrayList<>();
             endMessage.add("You can now connect to the VPN server using the following ip address:");
             endMessage.add(newInstance.getPublicIpAddress());
-            endMessage.add("vpn-username: " + vpnUser);
-            endMessage.add("vpn-password: " + vpnPassword);
-            endMessage.add("admin-username: " + adminUsername);
-            endMessage.add("admin-password: " + vpnPassword);
+            endMessage.add("username: " + adminUsername);
+            endMessage.add("password: " + vpnPassword);
 
             FOKLogger.info(Main.class.getName(), "#########################################################################");
             for (String line : endMessage) {
@@ -450,7 +443,7 @@ public class Main {
     }
 
     public enum Property {
-        awsKey, awsSecret, awsKeyPairName, awsRegion, privateKeyFile, openvpnUsername, openvpnPassword
+        awsKey, awsSecret, awsKeyPairName, awsRegion, privateKeyFile, openvpnPassword
     }
 
     private static class MyPrintStream extends PrintStream {
