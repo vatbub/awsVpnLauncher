@@ -443,6 +443,8 @@ public class Main {
         FOKLogger.info(Main.class.getName(), "\tprivateKeyFile: The fully qualified path to the private key file to authenticate on the EC2 instance using ssh. Example: C:\\Users\\Frederik\\.ssh\\frankfurtKey.pem");
         FOKLogger.info(Main.class.getName(), "\topenvpnPassword: The password to be set on the vpn server to access vpn and the admin area. Unfortunately, we cannot change the default username, but you can connect to the server yourself after its initial setup using ssh and add another user yourself.");
         FOKLogger.info(Main.class.getName(), "");
+        FOKLogger.info(Main.class.getName(), "The properties awsKeyPairName and privateKeyFile are saved on a per-region-basis, that means that you can configure several regions and switch the region just by modifying the awsRegion property.");
+        FOKLogger.info(Main.class.getName(), "");
         FOKLogger.info(Main.class.getName(), "Examples:");
         FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " launch");
         FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " terminate");
