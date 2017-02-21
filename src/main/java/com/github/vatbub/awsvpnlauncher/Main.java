@@ -33,7 +33,6 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import common.Common;
-import common.Prefs;
 import logging.FOKLogger;
 import org.jetbrains.annotations.NotNull;
 
@@ -51,7 +50,7 @@ public class Main {
 
     private static Instance newInstance;
     private static Session session;
-    private static Prefs prefs;
+    private static Preferences prefs;
     private static AmazonEC2 client;
     private static Regions awsRegion;
     private static String vpnPassword;
@@ -59,7 +58,7 @@ public class Main {
     public static void main(String[] args) {
         Common.setAppName("awsVpnLauncher");
         FOKLogger.enableLoggingOfUncaughtExceptions();
-        prefs = new Prefs(Main.class.getName());
+        prefs = new Preferences(Main.class.getName());
 
         if (args.length == 0) {
             // not enough arguments
@@ -453,16 +452,16 @@ public class Main {
     }
 
     private static void config(Property property, String value) {
-        prefs.setPreference(property.toString(), value);
+        prefs.setPreference(property, value);
         FOKLogger.info(Main.class.getName(), "Set the preference " + property.toString() + " to " + value);
     }
 
     private static void getConfig(Property property) {
-        FOKLogger.info(Main.class.getName(), "Value of property " + property.toString() + " is: " + prefs.getPreference(property.toString(), "<not set>"));
+        FOKLogger.info(Main.class.getName(), "Value of property " + property.toString() + " is: " + prefs.getPreference(property, "<not set>"));
     }
 
     private static String internalGetConfig(Property property) {
-        String res = prefs.getPreference(property.toString(), "");
+        String res = prefs.getPreference(property, "");
         if (res.equals("")) {
             throw new PropertyNotConfiguredException(property);
         } else {
