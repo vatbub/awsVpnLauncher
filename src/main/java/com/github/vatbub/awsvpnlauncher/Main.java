@@ -101,8 +101,8 @@ public class Main {
     }
 
     private static void initAWSConnection() {
-        AWSCredentials credentials = new BasicAWSCredentials(internalGetConfig(Property.awsKey), internalGetConfig(Property.awsSecret));
-        awsRegion = Regions.valueOf(internalGetConfig(Property.awsRegion));
+        AWSCredentials credentials = new BasicAWSCredentials(prefs.getPreference(Property.awsKey), prefs.getPreference(Property.awsSecret));
+        awsRegion = Regions.valueOf(prefs.getPreference(Property.awsRegion));
         client = AmazonEC2ClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(credentials)).withRegion(awsRegion).build();
     }
 
@@ -147,8 +147,8 @@ public class Main {
     }
 
     private static void launch() {
-        File privateKey = new File(internalGetConfig(Property.privateKeyFile));
-        vpnPassword = internalGetConfig(Property.openvpnPassword);
+        File privateKey = new File(prefs.getPreference(Property.privateKeyFile));
+        vpnPassword = prefs.getPreference(Property.openvpnPassword);
 
         if (!privateKey.exists() && !privateKey.isFile()) {
             throw new IllegalArgumentException("The file specified as " + Property.privateKeyFile.toString() + " does not exist or is not a file.");
@@ -237,7 +237,7 @@ public class Main {
             FOKLogger.info(Main.class.getName(), "Creating the RunInstanceRequest...");
             RunInstancesRequest request = new RunInstancesRequest(getAmiId(awsRegion), 1, 1);
             request.setInstanceType(InstanceType.T2Micro);
-            request.setKeyName(internalGetConfig(Property.awsKeyPairName));
+            request.setKeyName(prefs.getPreference(Property.awsKeyPairName));
             request.setSecurityGroupIds(securityGroups);
 
             FOKLogger.info(Main.class.getName(), "Starting the EC2 instance...");
@@ -443,7 +443,7 @@ public class Main {
         FOKLogger.info(Main.class.getName(), "\tprivateKeyFile: The fully qualified path to the private key file to authenticate on the EC2 instance using ssh. Example: C:\\Users\\Frederik\\.ssh\\frankfurtKey.pem");
         FOKLogger.info(Main.class.getName(), "\topenvpnPassword: The password to be set on the vpn server to access vpn and the admin area. Unfortunately, we cannot change the default username, but you can connect to the server yourself after its initial setup using ssh and add another user yourself.");
         FOKLogger.info(Main.class.getName(), "");
-        FOKLogger.info(Main.class.getName(), "The properties awsKeyPairName and privateKeyFile are saved on a per-region-basis, that means that you can configure several regions and switch the region just by modifying the awsRegion property.");
+        FOKLogger.info(Main.class.getName(), "The properties awsKeyPairName and privateKeyFile are saved on a per region basis, that means that you can configure several regions and switch the region just by modifying the awsRegion property.");
         FOKLogger.info(Main.class.getName(), "");
         FOKLogger.info(Main.class.getName(), "Examples:");
         FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " launch");
@@ -459,16 +459,7 @@ public class Main {
     }
 
     private static void getConfig(Property property) {
-        FOKLogger.info(Main.class.getName(), "Value of property " + property.toString() + " is: " + prefs.getPreference(property, "<not set>"));
-    }
-
-    private static String internalGetConfig(Property property) {
-        String res = prefs.getPreference(property, "");
-        if (res.equals("")) {
-            throw new PropertyNotConfiguredException(property);
-        } else {
-            return res;
-        }
+        FOKLogger.info(Main.class.getName(), "Value of property " + property.toString() + " is: " + prefs.getPreference(property));
     }
 
     public enum Property {
