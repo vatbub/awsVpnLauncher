@@ -21,8 +21,6 @@ public class Preferences extends Prefs {
 
     private String convertPropertyToString(Main.Property property) {
         switch (property) {
-            case awsKey:
-            case awsSecret:
             case awsKeyPairName:
             case privateKeyFile:
                 return Main.Property.awsRegion.toString() + "." + property.toString();
