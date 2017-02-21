@@ -5,6 +5,7 @@ import common.Prefs;
 /**
  * A custom implementation to preferences
  */
+@SuppressWarnings("WeakerAccess")
 public class Preferences extends Prefs {
     public Preferences(String className) {
         super(className);
