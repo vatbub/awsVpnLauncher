@@ -50,4 +50,4 @@ Note that all of your credentials and passwords will be stored on your hard driv
 
 ## Troupleshooting
 ### Things get stuck while launching/configuring the VPN server
-Just hit `Ctrl+C` to cancel the launch, run the terminate command and then the launch command again. If this does not work then, check if you are connected to the internet. If it still fails, create a new issue and post the console log in the issue. We will be pleased to help you.
+Just hit `Ctrl+C` to cancel the launch, run the [terminate](#terminate-all-running-instances) command and then the [launch](#launch-a-new-instance) command again. If this does not work then, check if you are connected to the internet. If it still fails, create a new issue and post the console log in the issue. We will be pleased to help you.
