@@ -38,12 +38,25 @@
         <version>0.0.21-SNAPSHOT</version>
     </parent>
 
+    <scm>
+        <connection>scm:git:git@github.com:vatbub/${gitRepoName}.git</connection>
+        <url>https://github.com/vatbub/${gitRepoName}</url>
+        <developerConnection>scm:git:git@github.com:vatbub/${gitRepoName}.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/vatbub/${gitRepoName}/issues</url>
+    </issueManagement>
+
     <name>AWSVpnLauncher</name>
     <description>Private project to automatically launch a VPN Server on AWS EC2</description>
 
     <properties>
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <gitRepoName>awsVpnLauncher</gitRepoName>
         <mainClass>com.github.vatbub.awsvpnlauncher.Main</mainClass>
     </properties>
 
