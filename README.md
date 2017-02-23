@@ -6,8 +6,20 @@ We don't use GitHub releases, and publish on Bintray instead. You can download t
 
 ## Initial config
 1. [Setup your AWS Account](https://aws.amazon.com/) if you don't have one already
-2. Go to [EC2](https://eu-central-1.console.aws.amazon.com/ec2/v2/home) and pick your desired region in the upper right corner. It is important to choose the right region as this will be the location shown to other websites while you use the VPN. If you want to appear to be in Germany, you need to select EU (Frankfurt). Likewise, you need to select EU (Ireland) to set your position to Ireland. **Please note: ** VPN is only available in the following regions: US_EAST_1 (Virginia), US_EAST_2 (Ohio), US_WEST_1 (Northern California), US_WEST_2 (Oregon), EU_WEST_1 (Ireland), EU_CENTRAL_1 (Frankfurt), AP_SOUTHEAST_1 (Singapore), AP_SOUTHEAST_2 (Sydney), AP_NORTHEAST_1 (Tokyo), SA_EAST_1 (Sao Paulo) *(For nerds: This is because the AMI is only available in those regions)*
-3. Note the code of the region you chose (e. g. AP_SOUTHEAST_2 for Sydney)
+2. Go to [EC2](https://eu-central-1.console.aws.amazon.com/ec2/v2/home) and pick your desired region in the upper right corner. It is important to choose the right region as this will be the location shown to other websites while you use the VPN. If you want to appear to be in Germany, you need to select EU (Frankfurt). Likewise, you need to select EU (Ireland) to set your position to Ireland. 
+  **Please note: ** VPN is only available in the following regions: 
+  - US_EAST_1 (Virginia)
+  - US_EAST_2 (Ohio)
+  - US_WEST_1 (Northern California)
+  - US_WEST_2 (Oregon)
+  - EU_WEST_1 (Ireland)
+  - EU_CENTRAL_1 (Frankfurt)
+  - AP_SOUTHEAST_1 (Singapore)
+  - AP_SOUTHEAST_2 (Sydney)
+  - AP_NORTHEAST_1 (Tokyo)
+  - SA_EAST_1 (Sao Paulo)
+  *(For nerds: This is because the AMI is only available in those regions)*
+3. Note the code of the region you chose (e. g. `AP_SOUTHEAST_2` for Sydney)
 4. Head over to the "Key Pairs"-section in the left menu and create a new Key Pair. Note the name of the Key Pair and download the corresponding `pem` file. This file is used to athenticate on the new instances so keep it in a safe place where it is unlikely that you will delete the file.
 5. Go to the [IAM User service](https://console.aws.amazon.com/iam/home?region=ap-southeast-2#/users) and create a new user.
 6. Give it a good name and allow "Programmatic access" and do not allow "AWS Management Console access" for more security.
@@ -24,7 +36,7 @@ java -jar awsVpnLauncher-1.0-jar-with-dependencies.jar config privateKeyFile C:\
 java -jar awsVpnLauncher-1.0-jar-with-dependencies.jar config openvpnPassword <The password for the vpn server that you wish to use>
 ```
 
-Note that all of your credentials and passwords will be stored on your hard drive in clear text. Anything is sent to any server except to Amazon AWS.
+Note that all of your credentials and passwords will be stored on your hard drive in clear text. Nothing is sent to any server except to Amazon AWS.
 
 ## Launch a new instance
 1. Open a terminal
