@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
 
 public class Main {
     // internal config
@@ -94,6 +95,9 @@ public class Main {
                 }
 
                 getConfig(Property.valueOf(args[1]));
+                break;
+            case "printconfig":
+                printConfig();
                 break;
             default:
                 printHelpMessage();
@@ -424,6 +428,7 @@ public class Main {
         FOKLogger.info(Main.class.getName(), "\tgetConfig <propertyName>: Prints the current value of the specified property.");
         FOKLogger.info(Main.class.getName(), "\t\toptions:");
         FOKLogger.info(Main.class.getName(), "\t\t\tpropertyName:\tThe name of the property to be printed");
+        FOKLogger.info(Main.class.getName(), "\tprintConfig: Prints the value of all currently configured parameters for the current awsRegion.");
         FOKLogger.info(Main.class.getName(), "");
         FOKLogger.info(Main.class.getName(), "Properties to be configured for a successful launch:");
         FOKLogger.info(Main.class.getName(), "\tawsKey: The key to use to authenticate on aws. The key must have full access to EC2. Your aws credentials are stored in plain text on your hard drive.");
@@ -460,6 +465,18 @@ public class Main {
 
     private static void getConfig(Property property) {
         FOKLogger.info(Main.class.getName(), "Value of property " + property.toString() + " is: " + prefs.getPreference(property));
+    }
+
+    private static void printConfig(){
+        FOKLogger.info(Main.class.getName(), "The current config is:");
+        FOKLogger.info(Main.class.getName(), "Property\t\tValue");
+        for (Property property:Property.values()){
+            try{
+                FOKLogger.info(Main.class.getName(), property.toString() + "\t\t" + prefs.getPreference(property));
+            }catch(PropertyNotConfiguredException e){
+                FOKLogger.log(Main.class.getName(), Level.SEVERE, "Property " + property.toString() + " is not configured", e);
+            }
+        }
     }
 
     public enum Property {

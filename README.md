@@ -48,6 +48,15 @@ Note that all of your credentials and passwords will be stored on your hard driv
 2. `cd` to the downloaded `jar`-file
 3. Run `java -jar awsVpnLauncher-1.0-jar-with-dependencies.jar terminate`
 
-## Troupleshooting
+## Pricing
+The script itself is free and is provided under the [Apache License v2.0](https://github.com/vatbub/awsVpnLauncher/blob/master/LICENSE.txt). 
+However, AWS will charge you for the required resources. The exact prices can be found [here](https://aws.amazon.com/marketplace/pp/B00MI40CAE/ref=mkt_wir_openvpn_byol#pricing-box).
+We currently use t2.micro as the instance type but there are plans to make this configurable.
+
+AWS will charge you for the traffic you push through the VPN, too. Detailed info about that can be found [here](https://aws.amazon.com/ec2/pricing/on-demand/#Data_Transfer).
+
+The instance type t2.micro is [free tier eligible](https://aws.amazon.com/free/). That means that the cpu of the instance will be free for one year. However, you will still be charged for the traffic.
+
+## Troubleshooting
 ### Things get stuck while launching/configuring the VPN server
 Just hit `Ctrl+C` to cancel the launch, run the [terminate](#terminate-all-running-instances) command and then the [launch](#launch-a-new-instance) command again. If this does not work then, check if you are connected to the internet. If it still fails, create a new issue and post the console log in the issue. We will be pleased to help you.
