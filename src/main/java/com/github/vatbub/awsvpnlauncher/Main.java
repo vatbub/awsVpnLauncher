@@ -110,7 +110,6 @@ public class Main {
                         throw new NotEnoughArgumentsException("No instanceId was specified to connect to and no instanceId was saved in the preference file. Please either start another instance using the launch command or specify the instance id of the instance to connect to as a additional parameter.");
                     }
 
-                    FOKLogger.info(Main.class.getName(), "Sending the termination request to AWS EC2...");
                     List<String> instanceIds = Arrays.asList(instanceIdsPrefValue.split(";"));
                     if (instanceIds.size() == 1) {
                         // exactly one instance found
@@ -127,6 +126,7 @@ public class Main {
 
                 initAWSConnection();
                 ssh(sshInstanceId);
+                break;
             default:
                 printHelpMessage();
         }
