@@ -99,6 +99,34 @@ public class Main {
             case "printconfig":
                 printConfig();
                 break;
+            case "ssh":
+                String sshInstanceId;
+                if (args.length == 2) {
+                    // a instanceID is specified
+                    sshInstanceId = args[1];
+                } else {
+                    String instanceIdsPrefValue = prefs.getPreference("instanceIDs", "");
+                    if (instanceIdsPrefValue.equals("")) {
+                        throw new NotEnoughArgumentsException("No instanceId was specified to connect to and no instanceId was saved in the preference file. Please either start another instance using the launch command or specify the instance id of the instance to connect to as a additional parameter.");
+                    }
+
+                    FOKLogger.info(Main.class.getName(), "Sending the termination request to AWS EC2...");
+                    List<String> instanceIds = Arrays.asList(instanceIdsPrefValue.split(";"));
+                    if (instanceIds.size() == 1) {
+                        // exactly one instance found
+                        sshInstanceId = instanceIds.get(0);
+                    } else {
+                        FOKLogger.severe(Main.class.getName(), "Multiple instance ids found:");
+
+                        for (String instanceId:instanceIds){
+                            FOKLogger.severe(Main.class.getName(), instanceId);
+                        }
+                        throw new NotEnoughArgumentsException("Multiple instance ids were found in the preference file. Please specify the instance id of the instance to connect to as a additional parameter.");
+                    }
+                }
+
+                initAWSConnection();
+                ssh(sshInstanceId);
             default:
                 printHelpMessage();
         }
@@ -429,6 +457,9 @@ public class Main {
         FOKLogger.info(Main.class.getName(), "\t\toptions:");
         FOKLogger.info(Main.class.getName(), "\t\t\tpropertyName:\tThe name of the property to be printed");
         FOKLogger.info(Main.class.getName(), "\tprintConfig: Prints the value of all currently configured parameters for the current awsRegion.");
+        FOKLogger.info(Main.class.getName(), "\tssh <instanceID>: Connects to the specified instance using ssh.");
+        FOKLogger.info(Main.class.getName(), "\t\toptions:");
+        FOKLogger.info(Main.class.getName(), "\t\t\tinstanceID:\tOptional. The instance of the id to connect to. If not specified, the script will try to connect to the previously launched instance.");
         FOKLogger.info(Main.class.getName(), "");
         FOKLogger.info(Main.class.getName(), "Properties to be configured for a successful launch:");
         FOKLogger.info(Main.class.getName(), "\tawsKey: The key to use to authenticate on aws. The key must have full access to EC2. Your aws credentials are stored in plain text on your hard drive.");
@@ -467,15 +498,68 @@ public class Main {
         FOKLogger.info(Main.class.getName(), "Value of property " + property.toString() + " is: " + prefs.getPreference(property));
     }
 
-    private static void printConfig(){
+    private static void printConfig() {
         FOKLogger.info(Main.class.getName(), "The current config is:");
         FOKLogger.info(Main.class.getName(), "Property\t\tValue");
-        for (Property property:Property.values()){
-            try{
+        for (Property property : Property.values()) {
+            try {
                 FOKLogger.info(Main.class.getName(), property.toString() + "\t\t" + prefs.getPreference(property));
-            }catch(PropertyNotConfiguredException e){
+            } catch (PropertyNotConfiguredException e) {
                 FOKLogger.log(Main.class.getName(), Level.SEVERE, "Property " + property.toString() + " is not configured", e);
             }
+        }
+    }
+
+    /**
+     * Connects to the specified instance using ssh. Output will be sent to System.out, input will be taken from System.in
+     *
+     * @param instanceID The id of the instance to connect to
+     */
+    private static void ssh(String instanceID) {
+        try {
+            File privateKey = new File(prefs.getPreference(Property.privateKeyFile));
+            DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
+            List<String> instanceId = new ArrayList<>(1);
+            instanceId.add(instanceID);
+            describeInstancesRequest.setInstanceIds(instanceId);
+            DescribeInstancesResult describeInstancesResult = client.describeInstances(describeInstancesRequest);
+            Instance instance = describeInstancesResult.getReservations().get(0).getInstances().get(0);
+
+            String sshIp = instance.getPublicDnsName();
+
+            // SSH config
+            FOKLogger.info(Main.class.getName(), "Configuring SSH...");
+            Properties sshConfig = new Properties();
+            sshConfig.put("StrictHostKeyChecking", "no");
+            JSch jsch = new JSch();
+            jsch.addIdentity(privateKey.getAbsolutePath());
+
+            FOKLogger.info(Main.class.getName(), "Connecting using ssh to " + sshUsername + "@" + sshIp);
+            FOKLogger.info(Main.class.getName(), "The instance will need some time to configure ssh on its end so some connection timeouts are normal");
+            boolean retry;
+            session = jsch.getSession(sshUsername, sshIp, 22);
+
+            session.setConfig(sshConfig);
+            do {
+                try {
+                    session.connect();
+                    retry = false;
+                } catch (Exception e) {
+                    FOKLogger.info(Main.class.getName(), e.getClass().getName() + ": " + e.getMessage() + ", retrying, Press Ctrl+C to cancel");
+                    retry = true;
+                }
+            } while (retry);
+
+            // Connected
+            FOKLogger.info(Main.class.getName(), "Connection established, connected to " + sshUsername + "@" + sshIp);
+
+            Channel channel = session.openChannel("shell");
+            channel.setInputStream(System.in);
+            channel.setOutputStream(System.out);
+            channel.connect();
+
+        } catch (JSchException e) {
+            e.printStackTrace();
         }
     }
 
