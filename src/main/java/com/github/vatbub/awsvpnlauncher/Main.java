@@ -118,7 +118,7 @@ public class Main {
                     } else {
                         FOKLogger.severe(Main.class.getName(), "Multiple instance ids found:");
 
-                        for (String instanceId:instanceIds){
+                        for (String instanceId : instanceIds) {
                             FOKLogger.severe(Main.class.getName(), instanceId);
                         }
                         throw new NotEnoughArgumentsException("Multiple instance ids were found in the preference file. Please specify the instance id of the instance to connect to as a additional parameter.");
@@ -555,7 +555,7 @@ public class Main {
 
             Channel channel = session.openChannel("shell");
             channel.setInputStream(System.in);
-            channel.setOutputStream(System.out);
+            channel.setOutputStream(new MyPrintStream());
             channel.connect();
 
         } catch (JSchException e) {
@@ -585,6 +585,9 @@ public class Main {
                 if (s.contains("password updated successfully")) {
                     // continue
                     cont();
+                } else if (s.contains("logout")) {
+                    FOKLogger.info(Main.class.getName(), "Logged out from SSH, terminating, good bye");
+                    System.exit(0);
                 }
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
