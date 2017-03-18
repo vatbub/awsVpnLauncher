@@ -20,7 +20,7 @@ We don't use GitHub releases, and publish on Bintray instead. You can download t
   - SA_EAST_1 (Sao Paulo)
   *(For nerds: This is because the AMI is only available in those regions)*
 3. Note the code of the region you chose (e. g. `AP_SOUTHEAST_2` for Sydney)
-4. Head over to the "Key Pairs"-section in the left menu and create a new Key Pair. Note the name of the Key Pair and download the corresponding `pem` file. This file is used to athenticate on the new instances so keep it in a safe place where it is unlikely that you will delete the file.
+4. Head over to the "Key Pairs"-section in the left menu and create a new Key Pair. Note the name of the Key Pair and download the corresponding `pem` file. This file is used to authenticate on the new instances so keep it in a safe place where it is unlikely that you will delete the file.
 5. Go to the [IAM User service](https://console.aws.amazon.com/iam/home?region=ap-southeast-2#/users) and create a new user.
 6. Give it a good name and allow "Programmatic access" and do not allow "AWS Management Console access" for more security.
 7. Select "Attach existing policies directly" on the permissions page and select "AmazonEC2FullAccess" *(Don't worry, we only create and terminate EC2 instances and the required security group, nothing else, but this is the only permission set that we tested the script with. If you don't trust us, have a look at the source code.)*

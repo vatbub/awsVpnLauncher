@@ -24,20 +24,9 @@ package com.github.vatbub.awsvpnlauncher;
 import common.Common;
 
 class PropertyNotConfiguredException extends RuntimeException {
-    public PropertyNotConfiguredException() {
-        super();
-    }
 
-    public PropertyNotConfiguredException(String message) {
+    private PropertyNotConfiguredException(String message) {
         super(message);
-    }
-
-    public PropertyNotConfiguredException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public PropertyNotConfiguredException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
     }
 
     public PropertyNotConfiguredException(Main.Property property) {
