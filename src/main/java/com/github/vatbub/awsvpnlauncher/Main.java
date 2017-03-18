@@ -28,11 +28,10 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.*;
-import com.jcraft.jsch.Channel;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
+import com.jcraft.jsch.*;
 import common.Common;
+import jnr.posix.POSIX;
+import jnr.posix.POSIXFactory;
 import logging.FOKLogger;
 import org.jetbrains.annotations.NotNull;
 
@@ -55,6 +54,7 @@ public class Main {
     private static AmazonEC2 client;
     private static Regions awsRegion;
     private static String vpnPassword;
+    private static final POSIX posix = POSIXFactory.getPOSIX();
 
     public static void main(String[] args) {
         Common.setAppName("awsVpnLauncher");
@@ -535,25 +535,26 @@ public class Main {
             jsch.addIdentity(privateKey.getAbsolutePath());
 
             FOKLogger.info(Main.class.getName(), "Connecting using ssh to " + sshUsername + "@" + sshIp);
-            FOKLogger.info(Main.class.getName(), "The instance will need some time to configure ssh on its end so some connection timeouts are normal");
-            boolean retry;
             session = jsch.getSession(sshUsername, sshIp, 22);
 
             session.setConfig(sshConfig);
-            do {
-                try {
-                    session.connect();
-                    retry = false;
-                } catch (Exception e) {
-                    FOKLogger.info(Main.class.getName(), e.getClass().getName() + ": " + e.getMessage() + ", retrying, Press Ctrl+C to cancel");
-                    retry = true;
-                }
-            } while (retry);
+            try {
+                session.connect();
+            } catch (Exception e) {
+                FOKLogger.log(Main.class.getName(), Level.SEVERE, "Could not connect to the instance due to an exception", e);
+            }
 
             // Connected
             FOKLogger.info(Main.class.getName(), "Connection established, connected to " + sshUsername + "@" + sshIp);
 
             Channel channel = session.openChannel("shell");
+
+            if (posix.isatty(FileDescriptor.out)){
+                FOKLogger.info(Main.class.getName(), "Connected to a tty, disabling colors...");
+                // Disable colors
+                ((ChannelShell)channel).setPtyType("vt102");
+            }
+
             channel.setInputStream(System.in);
             channel.setOutputStream(new MyPrintStream());
             channel.connect();
