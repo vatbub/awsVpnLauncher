@@ -33,6 +33,7 @@ import common.Common;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import logging.FOKLogger;
+import org.apache.commons.lang.SystemUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -47,14 +48,13 @@ public class Main {
     private static final String securityGroupName = "AWSVPNSecurityGroup";
     private static final String sshUsername = "openvpnas";
     private static final String adminUsername = "openvpn";
-
+    private static final POSIX posix = POSIXFactory.getPOSIX();
     private static Instance newInstance;
     private static Session session;
     private static Preferences prefs;
     private static AmazonEC2 client;
     private static Regions awsRegion;
     private static String vpnPassword;
-    private static final POSIX posix = POSIXFactory.getPOSIX();
 
     public static void main(String[] args) {
         Common.setAppName("awsVpnLauncher");
@@ -549,19 +549,41 @@ public class Main {
 
             Channel channel = session.openChannel("shell");
 
-            if (posix.isatty(FileDescriptor.out)){
+            if (posix.isatty(FileDescriptor.out)) {
                 FOKLogger.info(Main.class.getName(), "Connected to a tty, disabling colors...");
                 // Disable colors
-                ((ChannelShell)channel).setPtyType("vt102");
+                ((ChannelShell) channel).setPtyType("vt102");
             }
 
-            channel.setInputStream(System.in);
+            channel.setInputStream(copyAndFilterInputStream());
             channel.setOutputStream(new MyPrintStream());
             channel.connect();
 
-        } catch (JSchException e) {
-            e.printStackTrace();
+        } catch (JSchException | IOException e) {
+            FOKLogger.log(Main.class.getName(), Level.SEVERE, "An error occurred", e);
         }
+    }
+
+    private static InputStream copyAndFilterInputStream() throws IOException {
+        PipedOutputStream forwardTo = new PipedOutputStream();
+        PipedInputStream res = new PipedInputStream(forwardTo);
+        Thread pipeThread = new Thread(() -> {
+            while (true) {
+                try {
+                    char ch = (char) System.in.read();
+                    if (ch != '\r' && !SystemUtils.IS_OS_MAC) {
+                        forwardTo.write((int) ch);
+                    }
+                } catch (IOException e) {
+                    FOKLogger.log(Main.class.getName(), Level.INFO, "Stopped forwarding System in due to an exception", e);
+                    break;
+                }
+            }
+        });
+        pipeThread.setName("pipeThread");
+        pipeThread.start();
+
+        return res;
     }
 
     public enum Property {

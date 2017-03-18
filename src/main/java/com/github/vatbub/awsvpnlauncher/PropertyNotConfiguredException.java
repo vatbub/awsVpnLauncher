@@ -23,7 +23,7 @@ package com.github.vatbub.awsvpnlauncher;
 
 import common.Common;
 
-public class PropertyNotConfiguredException extends RuntimeException {
+class PropertyNotConfiguredException extends RuntimeException {
     public PropertyNotConfiguredException() {
         super();
     }
