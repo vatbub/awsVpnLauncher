@@ -33,8 +33,8 @@ import common.Common;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import logging.FOKLogger;
+import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang.SystemUtils;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -60,6 +60,15 @@ public class Main {
         Common.setAppName("awsVpnLauncher");
         FOKLogger.enableLoggingOfUncaughtExceptions();
         prefs = new Preferences(Main.class.getName());
+
+        // enable the shutdown hook
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (session != null) {
+                if (session.isConnected()) {
+                    session.disconnect();
+                }
+            }
+        }));
 
         if (args.length == 0) {
             // not enough arguments
@@ -365,6 +374,18 @@ public class Main {
                 sshInCommandStream.print("\n");
                 sshInCommandStream.print("\n");
                 sshInCommandStream.print("echo -e \"" + vpnPassword + "\\n" + vpnPassword + "\" | sudo passwd " + adminUsername + "\n");
+                sshInCommandStream.print("exit\n");
+
+                NullOutputStream nullOutputStream = new NullOutputStream();
+                Thread watchForSSHDisconnectThread = new Thread(() -> {
+                    while (channel.isConnected()) {
+                        nullOutputStream.write(0);
+                    }
+                    // disconnected
+                    cont();
+                });
+                watchForSSHDisconnectThread.setName("watchForSSHDisconnectThread");
+                watchForSSHDisconnectThread.start();
             }
         } catch (JSchException | IOException e) {
             e.printStackTrace();
@@ -559,6 +580,17 @@ public class Main {
             channel.setOutputStream(new MyPrintStream());
             channel.connect();
 
+            NullOutputStream nullOutputStream = new NullOutputStream();
+            Thread watchForSSHDisconnectThread = new Thread(() -> {
+                while (channel.isConnected()) {
+                    nullOutputStream.write(0);
+                }
+                // disconnected
+                System.exit(0);
+            });
+            watchForSSHDisconnectThread.setName("watchForSSHDisconnectThread");
+            watchForSSHDisconnectThread.start();
+
         } catch (JSchException | IOException e) {
             FOKLogger.log(Main.class.getName(), Level.SEVERE, "An error occurred", e);
         }
@@ -575,7 +607,7 @@ public class Main {
                         forwardTo.write((int) ch);
                     }
                 } catch (IOException e) {
-                    FOKLogger.log(Main.class.getName(), Level.INFO, "Stopped forwarding System in due to an exception", e);
+                    FOKLogger.log(Main.class.getName(), Level.SEVERE, "Stopped forwarding System in due to an exception", e);
                     break;
                 }
             }
@@ -601,20 +633,8 @@ public class Main {
         }
 
         @Override
-        public void write(@NotNull byte b[], int off, int len) {
-            super.write(b, off, len);
-            try {
-                String s = new String(b, "US-ASCII");
-                if (s.contains("password updated successfully")) {
-                    // continue
-                    cont();
-                } else if (s.contains("logout")) {
-                    FOKLogger.info(Main.class.getName(), "Logged out from SSH, terminating, good bye");
-                    System.exit(0);
-                }
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
+        public void close(){
+            // do nothing to prevent closure
         }
     }
 }
