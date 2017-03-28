@@ -28,11 +28,17 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.*;
+import com.cloudflare.api.CloudflareAccess;
+import com.cloudflare.api.constants.RecordType;
+import com.cloudflare.api.requests.dns.DNSAddRecord;
+import com.cloudflare.api.requests.dns.DNSDeleteRecord;
+import com.cloudflare.api.results.CloudflareError;
 import com.jcraft.jsch.*;
 import common.Common;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import logging.FOKLogger;
+import net.sf.json.JSONObject;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang.SystemUtils;
 
@@ -429,9 +435,41 @@ public class Main {
             FOKLogger.info(Main.class.getName(), "Disconnecting the SSH-session...");
             FOKLogger.info(Main.class.getName(), "----------------------------------------------------------------------");
 
+            String finalIP = newInstance.getPublicIpAddress();
+
+            try {
+                String cloudflareAPIKey = prefs.getPreference(Property.cloudflareAPIKey);
+                String cloudflareEmail = prefs.getPreference(Property.cloudflareEmail);
+                String targetDomain = prefs.getPreference(Property.cloudflareTargetDomain);
+                String subdomain = prefs.getPreference(Property.cloudflareSubdomain);
+
+                CloudflareAccess cloudflareAccess = new CloudflareAccess(cloudflareEmail, cloudflareAPIKey);
+                DNSAddRecord cloudflareAddDNSRequest = new DNSAddRecord(cloudflareAccess, targetDomain, RecordType.IPV4Address, subdomain, newInstance.getPublicIpAddress());
+
+                FOKLogger.info(Main.class.getName(), "Sending new IP to cloudflare...");
+                JSONObject cloudflareResult = cloudflareAddDNSRequest.executeBasic();
+
+                if (cloudflareResult == null) {
+                    FOKLogger.severe(Main.class.getName(), "Something went wrong while creating the DNS record for the vpn server on Cloudflare.");
+                } else {
+                    // Get the record id
+                    String cloudflareRecID = cloudflareResult.getJSONObject("rec").getJSONObject("obj").getString("rec_id");
+                    prefs.setPreference("cloudflareRecordID", cloudflareRecID);
+                    finalIP = subdomain + "." + targetDomain;
+                    FOKLogger.info(Main.class.getName(), "The DNS record for the VPN Server was successfully created");
+                    FOKLogger.fine(Main.class.getName(), "Cloudflare request result:");
+                    FOKLogger.fine(Main.class.getName(), cloudflareResult.toString());
+                }
+
+            } catch (PropertyNotConfiguredException e) {
+                FOKLogger.info(Main.class.getName(), "Cloudflare config is not defined, not sending the ip to cloudflare");
+            } catch (CloudflareError e) {
+                FOKLogger.log(Main.class.getName(), Level.SEVERE, "Could not create the DNS record on cloudflare", e);
+            }
+
             List<String> endMessage = new ArrayList<>();
             endMessage.add("You can now connect to the VPN server using the following ip address:");
-            endMessage.add(newInstance.getPublicIpAddress());
+            endMessage.add(finalIP);
             endMessage.add("username: " + adminUsername);
             endMessage.add("password: " + vpnPassword);
 
@@ -492,6 +530,31 @@ public class Main {
             } catch (AmazonEC2Exception e) {
                 FOKLogger.severe(Main.class.getName(), "Could not terminate instance " + instanceId + ": " + e.getMessage());
             }
+        }
+
+        try {
+            String cloudflareAPIKey = prefs.getPreference(Property.cloudflareAPIKey);
+            String cloudflareEmail = prefs.getPreference(Property.cloudflareEmail);
+            String targetDomain = prefs.getPreference(Property.cloudflareTargetDomain);
+            int cloudflareRecordID = Integer.parseInt(prefs.getPreference("cloudflareRecordID", "0"));
+
+            CloudflareAccess cloudflareAccess = new CloudflareAccess(cloudflareEmail, cloudflareAPIKey);
+            DNSDeleteRecord cloudFlareDeleteDNSRecordRequest = new DNSDeleteRecord(cloudflareAccess, targetDomain, cloudflareRecordID);
+
+            FOKLogger.info(Main.class.getName(), "Sending new IP to cloudflare...");
+            JSONObject cloudflareResult = cloudFlareDeleteDNSRecordRequest.executeBasic();
+
+            if (cloudflareResult == null) {
+                FOKLogger.severe(Main.class.getName(), "Something went wrong while deleting the DNS record for the vpn server on Cloudflare.");
+            } else {
+                FOKLogger.info(Main.class.getName(), "The DNS record for the VPN Server was successfully deleted");
+                FOKLogger.fine(Main.class.getName(), "Cloudflare request result:");
+                FOKLogger.fine(Main.class.getName(), cloudflareResult.toString());
+            }
+        } catch (PropertyNotConfiguredException e) {
+            FOKLogger.info(Main.class.getName(), "Cloudflare config is not defined, not sending the ip to cloudflare");
+        } catch (CloudflareError e) {
+            FOKLogger.log(Main.class.getName(), Level.SEVERE, "Something went wrong while deleting the DNS record for the vpn server on Cloudflare.", e);
         }
 
         // Delete the config value
@@ -697,7 +760,7 @@ public class Main {
      * Possible config properties
      */
     public enum Property {
-        awsKey, awsSecret, awsKeyPairName, awsRegion, privateKeyFile, openvpnPassword
+        awsKey, awsSecret, awsKeyPairName, awsRegion, privateKeyFile, openvpnPassword, cloudflareAPIKey, cloudflareEmail, cloudflareTargetDomain, cloudflareSubdomain
     }
 
     /**
