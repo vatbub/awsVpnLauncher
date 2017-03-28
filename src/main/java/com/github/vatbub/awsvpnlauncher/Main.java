@@ -157,6 +157,12 @@ public class Main {
         client = AmazonEC2ClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(credentials)).withRegion(awsRegion).build();
     }
 
+    /**
+     * Returns the name of the ami to use
+     *
+     * @param region The region where the AWS EC2 instance is launched
+     * @return The name of the ami to use
+     */
     private static String getAmiId(Regions region) {
         /*
         US East (Virginia) - ami-bc3566ab
@@ -197,6 +203,12 @@ public class Main {
         }
     }
 
+    /**
+     * Launches a new VPN server on AWS EC2 if everything is configured
+     *
+     * @see PropertyNotConfiguredException
+     * @see #terminate()
+     */
     private static void launch() {
         File privateKey = new File(prefs.getPreference(Property.privateKeyFile));
         vpnPassword = prefs.getPreference(Property.openvpnPassword);
@@ -406,6 +418,9 @@ public class Main {
         }
     }
 
+    /**
+     * Finalizes the launch of a AWS EC2 instance after the server configuration terminated successfully
+     */
     private static void cont() {
         try {
             System.out.println();
@@ -433,6 +448,12 @@ public class Main {
         }
     }
 
+    /**
+     * Formats a message to be printed on the console
+     *
+     * @param message The line to be formatted
+     * @return The formatted version of {@code message}
+     */
     private static String getRequiredSpaces(String message) {
         String res = "";
         final String reference = "#########################################################################";
@@ -445,6 +466,11 @@ public class Main {
         return res;
     }
 
+    /**
+     * Terminates all AWS instances that were started using this app
+     *
+     * @see #launch()
+     */
     private static void terminate() {
         String instanceIdsPrefValue = prefs.getPreference("instanceIDs", "");
         if (instanceIdsPrefValue.equals("")) {
@@ -472,6 +498,9 @@ public class Main {
         prefs.setPreference("instanceIDs", "");
     }
 
+    /**
+     * Prints the help message to the console
+     */
     private static void printHelpMessage() {
         FOKLogger.info(Main.class.getName(), Common.getAppName() + ", v" + Common.getAppVersion());
         FOKLogger.info(Main.class.getName(), "Usage:");
@@ -520,24 +549,45 @@ public class Main {
         FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " terminate");
         FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " config awsKey <yourAwsKeyHere>");
         FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " getConfig awsKey");
-
     }
 
+    /**
+     * Sets the value of the specified {@link Property}
+     *
+     * @param property The {@link Property} to be modified
+     * @param value    The value to set
+     * @see #getConfig(Property)
+     * @see #deleteConfig(Property)
+     * @see #printConfig()
+     */
     private static void config(Property property, String value) {
         prefs.setPreference(property, value);
         FOKLogger.info(Main.class.getName(), "Set the preference " + property.toString() + " to " + value);
     }
 
+    /**
+     * Prints the value of the specified config-{@link Property} to the console
+     *
+     * @param property
+     */
     private static void getConfig(Property property) {
         FOKLogger.info(Main.class.getName(), "Value of property " + property.toString() + " is: " + prefs.getPreference(property));
     }
 
-    private static void deleteConfig(Property property){
+    /**
+     * Deletes the specified config parameter from the current config
+     *
+     * @param property The {@link Property} to delete
+     */
+    private static void deleteConfig(Property property) {
         String previousValue = prefs.getPreference(property);
         prefs.setPreference(property, "");
         FOKLogger.info(Main.class.getName(), "Deleted the value for the property " + property.toString() + ", previous value was: " + previousValue);
     }
 
+    /**
+     * Prints the entire current config to the console
+     */
     private static void printConfig() {
         FOKLogger.info(Main.class.getName(), "The current config is:");
         FOKLogger.info(Main.class.getName(), "Property\t\tValue");
@@ -615,6 +665,12 @@ public class Main {
         }
     }
 
+    /**
+     * Copies {@code System.in} to new {@code InputStream}. Filters {@code CrLf}s ({@code \r\n} in Java) out and replaces them with a single {@code \n} ({@code \n} in Java)
+     *
+     * @return The {@code InputStream} to which the filtered contents are forwarded to.
+     * @throws IOException If {@code System.in} cannot be read for any reason
+     */
     private static InputStream copyAndFilterInputStream() throws IOException {
         PipedOutputStream forwardTo = new PipedOutputStream();
         PipedInputStream res = new PipedInputStream(forwardTo);
@@ -637,10 +693,16 @@ public class Main {
         return res;
     }
 
+    /**
+     * Possible config properties
+     */
     public enum Property {
         awsKey, awsSecret, awsKeyPairName, awsRegion, privateKeyFile, openvpnPassword
     }
 
+    /**
+     * A {@code PrintStream} that redirects to {@code System.out} but cannot be closed.
+     */
     private static class MyPrintStream extends PrintStream {
         /**
          * Creates a new print stream.  This stream will not flush automatically.
@@ -652,7 +714,7 @@ public class Main {
         }
 
         @Override
-        public void close(){
+        public void close() {
             // do nothing to prevent closure
         }
     }
