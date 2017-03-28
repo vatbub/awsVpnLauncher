@@ -568,7 +568,7 @@ public class Main {
     /**
      * Prints the value of the specified config-{@link Property} to the console
      *
-     * @param property
+     * @param property The {@link Property} whose value shall be printed
      */
     private static void getConfig(Property property) {
         FOKLogger.info(Main.class.getName(), "Value of property " + property.toString() + " is: " + prefs.getPreference(property));
