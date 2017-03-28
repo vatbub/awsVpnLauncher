@@ -108,6 +108,16 @@ public class Main {
             case "printconfig":
                 printConfig();
                 break;
+            case "deleteconfig":
+                // require a second arg
+                if (args.length == 1) {
+                    // not enough arguments
+                    printHelpMessage();
+                    throw new NotEnoughArgumentsException();
+                }
+
+                deleteConfig(Property.valueOf(args[1]));
+                break;
             case "ssh":
                 String sshInstanceId;
                 if (args.length == 2) {
@@ -478,6 +488,9 @@ public class Main {
         FOKLogger.info(Main.class.getName(), "\t\toptions:");
         FOKLogger.info(Main.class.getName(), "\t\t\tpropertyName:\tThe name of the property to be printed");
         FOKLogger.info(Main.class.getName(), "\tprintConfig: Prints the value of all currently configured parameters for the current awsRegion.");
+        FOKLogger.info(Main.class.getName(), "\tdeleteConfig <propertyName>: Deletes the value of the specified property.");
+        FOKLogger.info(Main.class.getName(), "\t\toptions:");
+        FOKLogger.info(Main.class.getName(), "\t\t\tpropertyName:\tThe name of the property to be deleted");
         FOKLogger.info(Main.class.getName(), "\tssh <instanceID>: Connects to the specified instance using ssh.");
         FOKLogger.info(Main.class.getName(), "\t\toptions:");
         FOKLogger.info(Main.class.getName(), "\t\t\tinstanceID:\tOptional. The instance of the id to connect to. If not specified, the script will try to connect to the previously launched instance.");
@@ -517,6 +530,12 @@ public class Main {
 
     private static void getConfig(Property property) {
         FOKLogger.info(Main.class.getName(), "Value of property " + property.toString() + " is: " + prefs.getPreference(property));
+    }
+
+    private static void deleteConfig(Property property){
+        String previousValue = prefs.getPreference(property);
+        prefs.setPreference(property, "");
+        FOKLogger.info(Main.class.getName(), "Deleted the value for the property " + property.toString() + ", previous value was: " + previousValue);
     }
 
     private static void printConfig() {
