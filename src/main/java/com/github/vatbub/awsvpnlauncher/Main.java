@@ -477,8 +477,10 @@ public class Main {
             endMessage.add(finalIP);
             endMessage.add("username: " + adminUsername);
             endMessage.add("password: " + vpnPassword);
+            endMessage.add("Go to the following url to get the VPN client:");
+            endMessage.add("https://" + finalIP + ":943" + "/");
 
-            String[] formattedMessage = StringCommon.formatMessage((String[]) endMessage.toArray());
+            List<String> formattedMessage = StringCommon.formatMessage(endMessage);
             for (String line : formattedMessage) {
                 FOKLogger.info(Main.class.getName(), line);
             }
