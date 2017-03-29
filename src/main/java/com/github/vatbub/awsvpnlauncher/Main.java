@@ -437,34 +437,38 @@ public class Main {
 
             String finalIP = newInstance.getPublicIpAddress();
 
-            try {
-                String cloudflareAPIKey = prefs.getPreference(Property.cloudflareAPIKey);
-                String cloudflareEmail = prefs.getPreference(Property.cloudflareEmail);
-                String targetDomain = prefs.getPreference(Property.cloudflareTargetDomain);
-                String subdomain = prefs.getPreference(Property.cloudflareSubdomain);
+            if (!prefs.getPreference("cloudflareRecordID", "0").equals("0")) {
+                FOKLogger.severe(Main.class.getName(), "Cannot create a new DNS record as another instance is already using it.");
+            } else {
+                try {
+                    String cloudflareAPIKey = prefs.getPreference(Property.cloudflareAPIKey);
+                    String cloudflareEmail = prefs.getPreference(Property.cloudflareEmail);
+                    String targetDomain = prefs.getPreference(Property.cloudflareTargetDomain);
+                    String subdomain = prefs.getPreference(Property.cloudflareSubdomain);
 
-                CloudflareAccess cloudflareAccess = new CloudflareAccess(cloudflareEmail, cloudflareAPIKey);
-                DNSAddRecord cloudflareAddDNSRequest = new DNSAddRecord(cloudflareAccess, targetDomain, RecordType.IPV4Address, subdomain, newInstance.getPublicIpAddress());
+                    CloudflareAccess cloudflareAccess = new CloudflareAccess(cloudflareEmail, cloudflareAPIKey);
+                    DNSAddRecord cloudflareAddDNSRequest = new DNSAddRecord(cloudflareAccess, targetDomain, RecordType.IPV4Address, subdomain, newInstance.getPublicIpAddress());
 
-                FOKLogger.info(Main.class.getName(), "Creating the DNS record on cloudflare...");
-                JSONObject cloudflareResult = cloudflareAddDNSRequest.executeBasic();
+                    FOKLogger.info(Main.class.getName(), "Creating the DNS record on cloudflare...");
+                    JSONObject cloudflareResult = cloudflareAddDNSRequest.executeBasic();
 
-                if (cloudflareResult == null) {
-                    FOKLogger.severe(Main.class.getName(), "Something went wrong while creating the DNS record for the vpn server on Cloudflare.");
-                } else {
-                    // Get the record id
-                    String cloudflareRecID = cloudflareResult.getJSONObject("rec").getJSONObject("obj").getString("rec_id");
-                    prefs.setPreference("cloudflareRecordID", cloudflareRecID);
-                    finalIP = subdomain + "." + targetDomain;
-                    FOKLogger.info(Main.class.getName(), "The DNS record for the VPN Server was successfully created");
-                    FOKLogger.fine(Main.class.getName(), "Cloudflare request result:");
-                    FOKLogger.fine(Main.class.getName(), cloudflareResult.toString());
+                    if (cloudflareResult == null) {
+                        FOKLogger.severe(Main.class.getName(), "Something went wrong while creating the DNS record for the vpn server on Cloudflare.");
+                    } else {
+                        // Get the record id
+                        String cloudflareRecID = cloudflareResult.getJSONObject("rec").getJSONObject("obj").getString("rec_id");
+                        prefs.setPreference("cloudflareRecordID", cloudflareRecID);
+                        finalIP = subdomain + "." + targetDomain;
+                        FOKLogger.info(Main.class.getName(), "The DNS record for the VPN Server was successfully created");
+                        FOKLogger.fine(Main.class.getName(), "Cloudflare request result:");
+                        FOKLogger.fine(Main.class.getName(), cloudflareResult.toString());
+                    }
+
+                } catch (PropertyNotConfiguredException e) {
+                    FOKLogger.info(Main.class.getName(), "Cloudflare config is not defined, not sending the ip to cloudflare");
+                } catch (CloudflareError e) {
+                    FOKLogger.log(Main.class.getName(), Level.SEVERE, "Could not create the DNS record on cloudflare", e);
                 }
-
-            } catch (PropertyNotConfiguredException e) {
-                FOKLogger.info(Main.class.getName(), "Cloudflare config is not defined, not sending the ip to cloudflare");
-            } catch (CloudflareError e) {
-                FOKLogger.log(Main.class.getName(), Level.SEVERE, "Could not create the DNS record on cloudflare", e);
             }
 
             List<String> endMessage = new ArrayList<>();
@@ -547,6 +551,7 @@ public class Main {
             if (cloudflareResult == null) {
                 FOKLogger.severe(Main.class.getName(), "Something went wrong while deleting the DNS record for the vpn server on Cloudflare.");
             } else {
+                prefs.setPreference("cloudflareRecordID", "0");
                 FOKLogger.info(Main.class.getName(), "The DNS record for the VPN Server was successfully deleted");
                 FOKLogger.fine(Main.class.getName(), "Cloudflare request result:");
                 FOKLogger.fine(Main.class.getName(), cloudflareResult.toString());
