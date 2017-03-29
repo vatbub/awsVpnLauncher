@@ -479,6 +479,8 @@ public class Main {
             endMessage.add("password: " + vpnPassword);
             endMessage.add("Go to the following url to get the VPN client:");
             endMessage.add("https://" + finalIP + ":943" + "/");
+            endMessage.add("Go to the following url to access the admin page:");
+            endMessage.add("https://" + finalIP + ":943" + "/admin");
 
             List<String> formattedMessage = StringCommon.formatMessage(endMessage);
             for (String line : formattedMessage) {
