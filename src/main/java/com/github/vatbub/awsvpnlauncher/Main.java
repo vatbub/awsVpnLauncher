@@ -35,6 +35,7 @@ import com.cloudflare.api.requests.dns.DNSDeleteRecord;
 import com.cloudflare.api.results.CloudflareError;
 import com.jcraft.jsch.*;
 import common.Common;
+import common.StringCommon;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import logging.FOKLogger;
@@ -477,11 +478,10 @@ public class Main {
             endMessage.add("username: " + adminUsername);
             endMessage.add("password: " + vpnPassword);
 
-            FOKLogger.info(Main.class.getName(), "#########################################################################");
-            for (String line : endMessage) {
-                FOKLogger.info(Main.class.getName(), "# " + line + getRequiredSpaces(line) + " #");
+            String[] formattedMessage = StringCommon.formatMessage((String[]) endMessage.toArray());
+            for (String line : formattedMessage) {
+                FOKLogger.info(Main.class.getName(), line);
             }
-            FOKLogger.info(Main.class.getName(), "#########################################################################");
             session.disconnect();
         } catch (Exception e) {
             e.printStackTrace();
@@ -490,23 +490,7 @@ public class Main {
         }
     }
 
-    /**
-     * Formats a message to be printed on the console
-     *
-     * @param message The line to be formatted
-     * @return The formatted version of {@code message}
-     */
-    private static String getRequiredSpaces(String message) {
-        String res = "";
-        final String reference = "#########################################################################";
-        int requiredSpaces = reference.length() - message.length() - 4;
 
-        for (int i = 0; i < requiredSpaces; i++) {
-            res = res + " ";
-        }
-
-        return res;
-    }
 
     /**
      * Terminates all AWS instances that were started using this app
