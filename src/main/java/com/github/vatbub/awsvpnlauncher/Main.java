@@ -446,7 +446,7 @@ public class Main {
                 CloudflareAccess cloudflareAccess = new CloudflareAccess(cloudflareEmail, cloudflareAPIKey);
                 DNSAddRecord cloudflareAddDNSRequest = new DNSAddRecord(cloudflareAccess, targetDomain, RecordType.IPV4Address, subdomain, newInstance.getPublicIpAddress());
 
-                FOKLogger.info(Main.class.getName(), "Sending new IP to cloudflare...");
+                FOKLogger.info(Main.class.getName(), "Creating the DNS record on cloudflare...");
                 JSONObject cloudflareResult = cloudflareAddDNSRequest.executeBasic();
 
                 if (cloudflareResult == null) {
@@ -541,7 +541,7 @@ public class Main {
             CloudflareAccess cloudflareAccess = new CloudflareAccess(cloudflareEmail, cloudflareAPIKey);
             DNSDeleteRecord cloudFlareDeleteDNSRecordRequest = new DNSDeleteRecord(cloudflareAccess, targetDomain, cloudflareRecordID);
 
-            FOKLogger.info(Main.class.getName(), "Sending new IP to cloudflare...");
+            FOKLogger.info(Main.class.getName(), "Deleting the DNS record on cloudflare...");
             JSONObject cloudflareResult = cloudFlareDeleteDNSRecordRequest.executeBasic();
 
             if (cloudflareResult == null) {
