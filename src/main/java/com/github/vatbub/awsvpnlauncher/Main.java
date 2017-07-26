@@ -172,39 +172,51 @@ public class Main {
      */
     private static String getAmiId(Regions region) {
         /*
-        US East (Virginia) - ami-bc3566ab
-        US East (Ohio) - ami-10306a75
-        US West (Oregon) - ami-d3e743b3
-        US West (Northern California) - ami-4a02492a
-        EU West (Ireland) - ami-f53d7386
-        EU Central (Frankurt) - ami-ad1fe6c2
-        Asia Pacific (Singapore) - ami-a859ffcb
-        Asia Pacific (Tokyo) - ami-e9da7c88
-        Asia Pacific (Sydney) - ami-89477aea
-        South America (Sao Paulo) - ami-0c069b60
+        Asia Pacific (Mumbai) 	ami-cdd4aaa2
+        EU (London) 	ami-17c5d373
+        EU (Ireland) 	ami-238b6a5a
+        Asia Pacific (Seoul) 	ami-c98c52a7
+        Asia Pacific (Tokyo) 	ami-dee1fdb9
+        South America (Sao Paulo) 	ami-930673ff
+        Canada (Central) 	ami-c6813ea2
+        Asia Pacific (Singapore) 	ami-81d75de2
+        Asia Pacific (Sydney) 	ami-3cd6c45f
+        EU (Frankfurt) 	ami-17862678
+        US East (N. Virginia) 	ami-f6eed4e0
+        US East (Ohio) 	ami-6d163708
+        US West (N. California) 	ami-091f3069
+        US West (Oregon) 	ami-e346559a
          */
 
         switch (region) {
-            case US_EAST_1:
-                return "ami-bc3566ab";
-            case US_EAST_2:
-                return "ami-10306a75";
-            case US_WEST_1:
-                return "ami-4a02492a";
-            case US_WEST_2:
-                return "ami-d3e743b3";
+            case AP_SOUTH_1:
+                return "ami-cdd4aaa2";
+            case EU_WEST_2:
+                return "ami-17c5d373";
             case EU_WEST_1:
-                return "ami-f53d7386";
-            case EU_CENTRAL_1:
-                return "ami-ad1fe6c2";
-            case AP_SOUTHEAST_1:
-                return "ami-a859ffcb";
-            case AP_SOUTHEAST_2:
-                return "ami-89477aea";
+                return "ami-238b6a5a";
+            case AP_NORTHEAST_2:
+                return "ami-c98c52a7";
             case AP_NORTHEAST_1:
-                return "ami-e9da7c88";
+                return "ami-dee1fdb9";
             case SA_EAST_1:
-                return "ami-0c069b60";
+                return "ami-930673ff";
+            case CA_CENTRAL_1:
+                return "ami-c6813ea2";
+            case AP_SOUTHEAST_1:
+                return "ami-81d75de2";
+            case AP_SOUTHEAST_2:
+                return "ami-3cd6c45f";
+            case EU_CENTRAL_1:
+                return "ami-17862678";
+            case US_EAST_1:
+                return "ami-f6eed4e0";
+            case US_EAST_2:
+                return "ami-6d163708";
+            case US_WEST_1:
+                return "ami-091f3069";
+            case US_WEST_2:
+                return "ami-e346559a";
             default:
                 throw new RegionNotSupportedException(region);
         }
@@ -495,7 +507,6 @@ public class Main {
     }
 
 
-
     /**
      * Terminates all AWS instances that were started using this app
      *
@@ -589,11 +600,15 @@ public class Main {
         FOKLogger.info(Main.class.getName(), "\t\tUS_EAST_2 (Ohio)");
         FOKLogger.info(Main.class.getName(), "\t\tUS_WEST_1 (Northern California)");
         FOKLogger.info(Main.class.getName(), "\t\tUS_WEST_2 (Oregon)");
+        FOKLogger.info(Main.class.getName(), "\t\tCA_CENTRAL_1 (Canada)");
         FOKLogger.info(Main.class.getName(), "\t\tEU_WEST_1 (Ireland)");
+        FOKLogger.info(Main.class.getName(), "\t\tEU_WEST_2 (London)");
         FOKLogger.info(Main.class.getName(), "\t\tEU_CENTRAL_1 (Frankfurt)");
+        FOKLogger.info(Main.class.getName(), "\t\tAP_SOUTH_1 (Mumbai)");
         FOKLogger.info(Main.class.getName(), "\t\tAP_SOUTHEAST_1 (Singapore)");
         FOKLogger.info(Main.class.getName(), "\t\tAP_SOUTHEAST_2 (Sydney)");
         FOKLogger.info(Main.class.getName(), "\t\tAP_NORTHEAST_1 (Tokyo)");
+        FOKLogger.info(Main.class.getName(), "\t\tAP_NORTHEAST_2 (Seoul)");
         FOKLogger.info(Main.class.getName(), "\t\tSA_EAST_1 (Sao Paulo)");
         FOKLogger.info(Main.class.getName(), "\tprivateKeyFile: The fully qualified path to the private key file to authenticate on the EC2 instance using ssh. Example: C:\\Users\\Frederik\\.ssh\\frankfurtKey.pem");
         FOKLogger.info(Main.class.getName(), "\topenvpnPassword: The password to be set on the vpn server to access vpn and the admin area. Unfortunately, we cannot change the default username, but you can connect to the server yourself after its initial setup using ssh and add another user yourself.");
