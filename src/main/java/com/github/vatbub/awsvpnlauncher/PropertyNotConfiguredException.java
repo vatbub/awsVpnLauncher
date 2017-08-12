@@ -20,8 +20,7 @@ package com.github.vatbub.awsvpnlauncher;
  * #L%
  */
 
-
-import common.Common;
+import com.github.vatbub.common.core.Common;
 
 class PropertyNotConfiguredException extends RuntimeException {
 

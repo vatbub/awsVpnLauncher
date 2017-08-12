@@ -21,7 +21,7 @@ package com.github.vatbub.awsvpnlauncher;
  */
 
 
-import common.Prefs;
+import com.github.vatbub.common.core.Prefs;
 
 /**
  * A custom implementation to preferences
