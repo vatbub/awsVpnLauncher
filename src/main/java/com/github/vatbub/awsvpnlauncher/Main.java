@@ -34,8 +34,11 @@ import com.cloudflare.api.requests.dns.DNSAddRecord;
 import com.cloudflare.api.requests.dns.DNSDeleteRecord;
 import com.cloudflare.api.results.CloudflareError;
 import com.github.vatbub.common.core.Common;
+import com.github.vatbub.common.core.Config;
 import com.github.vatbub.common.core.StringCommon;
 import com.github.vatbub.common.core.logging.FOKLogger;
+import com.github.vatbub.common.updater.UpdateChecker;
+import com.github.vatbub.common.updater.UpdateInfo;
 import com.jcraft.jsch.*;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
@@ -44,6 +47,7 @@ import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang.SystemUtils;
 
 import java.io.*;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -62,6 +66,8 @@ public class Main {
     private static AmazonEC2 client;
     private static Regions awsRegion;
     private static String vpnPassword;
+    private static Config mvnRepoConfig;
+    private static Config projectConfig;
 
     public static void main(String[] args) {
         Common.setAppName("awsVpnLauncher");
@@ -76,6 +82,47 @@ public class Main {
                 }
             }
         }));
+
+        UpdateChecker.completeUpdate(args, (oldVersion, oldFile) -> {
+            if (oldVersion != null) {
+                FOKLogger.info(Main.class.getName(), "Successfully upgraded " + Common.getAppName() + " from v" + oldVersion.toString() + " to v" + Common.getAppVersion());
+            }
+        });
+        List<String> argsAsList = new ArrayList<>(Arrays.asList(args));
+
+        for (String arg : args) {
+            if (arg.toLowerCase().matches("mockappversion=.*")) {
+                // Set the mock version
+                String version = arg.substring(arg.toLowerCase().indexOf('=') + 1);
+                Common.setMockAppVersion(version);
+                argsAsList.remove(arg);
+            } else if (arg.toLowerCase().matches("mockbuildnumber=.*")) {
+                // Set the mock build number
+                String buildnumber = arg.substring(arg.toLowerCase().indexOf('=') + 1);
+                Common.setMockBuildNumber(buildnumber);
+                argsAsList.remove(arg);
+            } else if (arg.toLowerCase().matches("mockpackaging=.*")) {
+                // Set the mock packaging
+                String packaging = arg.substring(arg.toLowerCase().indexOf('=') + 1);
+                Common.setMockPackaging(packaging);
+                argsAsList.remove(arg);
+            }
+        }
+
+        args = argsAsList.toArray(new String[0]);
+
+        try {
+            mvnRepoConfig = new Config(new URL("https://www.dropbox.com/s/vnhs4nax2lczccf/mavenRepoConfig.properties?dl=1"), Main.class.getResource("mvnRepoFallbackConfig.properties"), "mvnRepoCachedConfig");
+            projectConfig = new Config(new URL("https://www.dropbox.com/s/d36hwrrufoxfmm7/projectConfig.properties?dl=1"), Main.class.getResource("projectFallbackConfig.properties"), "projectCachedConfig");
+        } catch (IOException e) {
+            FOKLogger.log(Main.class.getName(), Level.SEVERE, "Could not load the remote config", e);
+        }
+
+        try {
+            installUpdates(args);
+        } catch (IOException e) {
+            FOKLogger.log(Main.class.getName(), Level.SEVERE, "Could not install updates", e);
+        }
 
         if (args.length == 0) {
             // not enough arguments
@@ -414,7 +461,7 @@ public class Main {
                 sshInCommandStream.print("\n");
                 sshInCommandStream.print("\n");
                 sshInCommandStream.print("\n");
-                sshInCommandStream.print("echo \"" + adminUsername + ":" + vpnPassword +  "\" | sudo chpasswd\n");
+                sshInCommandStream.print("echo \"" + adminUsername + ":" + vpnPassword + "\" | sudo chpasswd\n");
                 sshInCommandStream.print("exit\n");
 
                 NullOutputStream nullOutputStream = new NullOutputStream();
@@ -505,7 +552,6 @@ public class Main {
             System.exit(1);
         }
     }
-
 
     /**
      * Terminates all AWS instances that were started using this app
@@ -762,6 +808,13 @@ public class Main {
         pipeThread.start();
 
         return res;
+    }
+
+    private static void installUpdates(String[] startupArgs) throws IOException {
+        UpdateInfo updateInfo = UpdateChecker.isUpdateAvailableCompareAppVersion(new URL(mvnRepoConfig.getValue("repoBaseURL")), projectConfig.getValue("groupId"), projectConfig.getValue("artifactId"), "jar-with-dependencies", "jar");
+        if (updateInfo.showAlert) {
+            UpdateChecker.downloadAndInstallUpdate(updateInfo, new UpdateProgressUI(), true, true, true, startupArgs);
+        }
     }
 
     /**
