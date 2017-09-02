@@ -414,7 +414,7 @@ public class Main {
                 sshInCommandStream.print("\n");
                 sshInCommandStream.print("\n");
                 sshInCommandStream.print("\n");
-                sshInCommandStream.print("echo -e \"" + vpnPassword + "\\n" + vpnPassword + "\" | sudo passwd " + adminUsername + "\n");
+                sshInCommandStream.print("echo \"" + adminUsername + ":" + vpnPassword +  "\" | sudo chpasswd\n");
                 sshInCommandStream.print("exit\n");
 
                 NullOutputStream nullOutputStream = new NullOutputStream();
