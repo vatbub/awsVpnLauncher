@@ -40,9 +40,9 @@ public class UpdateProgressUI implements UpdateProgressDialog {
 
     @Override
     public void downloadProgressChanged(double kilobytesDownloaded, double totalFileSizeInKB) {
-        int numberOfTicks = 10;
+        int numberOfTicks = 100;
         double percent = kilobytesDownloaded / totalFileSizeInKB;
-        int ticksToShow = (int) Math.round(percent) * numberOfTicks;
+        int ticksToShow = (int) Math.round(percent * 100) * numberOfTicks / 100;
         int emptyTicks = numberOfTicks - ticksToShow;
 
         StringBuilder out = new StringBuilder("|");
