@@ -120,7 +120,7 @@ public class Main {
 
         try {
             installUpdates(args);
-        } catch (IOException e) {
+        } catch (Exception e) {
             FOKLogger.log(Main.class.getName(), Level.SEVERE, "Could not install updates", e);
         }
 
