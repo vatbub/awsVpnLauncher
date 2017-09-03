@@ -1,5 +1,19 @@
 # Change Log
 
+## [awsVpnLauncher-1.4](https://github.com/vatbub/awsVpnLauncher/tree/awsVpnLauncher-1.4) (2017-09-03)
+[Full Changelog](https://github.com/vatbub/awsVpnLauncher/compare/awsVpnLauncher-1.3...awsVpnLauncher-1.4)
+
+**Fixed bugs:**
+
+- Update progress bar not working [\#4](https://github.com/vatbub/awsVpnLauncher/issues/4)
+
+## [awsVpnLauncher-1.3](https://github.com/vatbub/awsVpnLauncher/tree/awsVpnLauncher-1.3) (2017-09-03)
+[Full Changelog](https://github.com/vatbub/awsVpnLauncher/compare/awsVpnLauncher-1.2...awsVpnLauncher-1.3)
+
+**Fixed bugs:**
+
+- NullPointerException when checking for updates might cancel the launch/termination of the VPN server  [\#3](https://github.com/vatbub/awsVpnLauncher/issues/3)
+
 ## [awsVpnLauncher-1.2](https://github.com/vatbub/awsVpnLauncher/tree/awsVpnLauncher-1.2) (2017-09-02)
 [Full Changelog](https://github.com/vatbub/awsVpnLauncher/compare/awsVpnLauncher-1.1...awsVpnLauncher-1.2)
 
