@@ -33,6 +33,10 @@ import com.cloudflare.api.constants.RecordType;
 import com.cloudflare.api.requests.dns.DNSAddRecord;
 import com.cloudflare.api.requests.dns.DNSDeleteRecord;
 import com.cloudflare.api.results.CloudflareError;
+import com.github.vatbub.commandlineUserPromptProcessor.Prompt;
+import com.github.vatbub.commandlineUserPromptProcessor.parsables.Parsable;
+import com.github.vatbub.commandlineUserPromptProcessor.parsables.ParsableEnum;
+import com.github.vatbub.commandlineUserPromptProcessor.parsables.ParseException;
 import com.github.vatbub.common.core.Common;
 import com.github.vatbub.common.core.Config;
 import com.github.vatbub.common.core.StringCommon;
@@ -46,7 +50,10 @@ import net.sf.json.JSONObject;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang.SystemUtils;
 
+import java.awt.*;
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -131,6 +138,9 @@ public class Main {
         }
 
         switch (args[0].toLowerCase()) {
+            case "setup":
+                setup();
+                break;
             case "launch":
                 initAWSConnection();
                 launch();
@@ -814,6 +824,53 @@ public class Main {
         UpdateInfo updateInfo = UpdateChecker.isUpdateAvailableCompareAppVersion(new URL(mvnRepoConfig.getValue("repoBaseURL")), projectConfig.getValue("groupId"), projectConfig.getValue("artifactId"), "jar-with-dependencies", "jar");
         if (updateInfo.showAlert) {
             UpdateChecker.downloadAndInstallUpdate(updateInfo, new UpdateProgressUI(), true, true, true, startupArgs);
+        }
+    }
+
+    private static void setup() {
+        FOKLogger.info(Main.class.getName(), "Welcome to the awsVPNLauncher v" + Common.getAppVersion());
+        FOKLogger.info(Main.class.getName(), "You will now be guided through the setup process.");
+        FOKLogger.info(Main.class.getName(), "You will have to do this only once.");
+        FOKLogger.info(Main.class.getName(), "If you already did the setup once, setup will override previous values.");
+
+        FOKLogger.info(Main.class.getName(), "--------------------------------------------------------------------------");
+        FOKLogger.info(Main.class.getName(), "Amazon AWS Account");
+        FOKLogger.info(Main.class.getName(), "--------------------------------------------------------------------------");
+        FOKLogger.info(Main.class.getName(), "Once you hit enter, your browser will be opened and you will be guided to");
+        FOKLogger.info(Main.class.getName(), "the Amazon AWS login page.");
+        FOKLogger.info(Main.class.getName(), "If you already have an Amazon Account, you can use that, if not, please create a new account.");
+        FOKLogger.info(Main.class.getName(), "Once you logged in, please return to this window to read the new instructions.");
+
+        FOKLogger.info(Main.class.getName(), "Press enter to continue...");
+        try {
+            //noinspection unused
+            int readResult = System.in.read();
+        } catch (IOException e) {
+            FOKLogger.log(Main.class.getName(), Level.SEVERE, "Could not read from System.in, resuming setup...", e);
+        }
+
+        boolean cont = false;
+        while (!cont) {
+            try {
+                Desktop.getDesktop().browse(new URI(projectConfig.getValue("awsCreateIAMUserURL")));
+            } catch (IOException | URISyntaxException e) {
+                FOKLogger.log(Main.class.getName(), Level.SEVERE, "Could not open the login page", e);
+                cont = true;
+            }
+
+            try {
+                Parsable result = new Prompt("Reload the login page or continue?", new ParsableEnum<>(ReloadContinue.class, ReloadContinue.Reload)).doPrompt();
+                if (result.toValue() == ReloadContinue.Continue) {
+                    cont = true;
+                }
+            } catch (ParseException e) {
+                cont = false;
+                if (e.getMessage() != null) {
+                    FOKLogger.severe(Main.class.getName(), "Unable to parse the input: " + e.getMessage());
+                } else {
+                    FOKLogger.severe(Main.class.getName(), "Unable to parse the input");
+                }
+            }
         }
     }
 
