@@ -32,12 +32,12 @@ We don't use GitHub releases, and publish on Bintray instead. You can download t
 9. Now open up a terminal (on Windows, you hit Win+R and type cmd and then hit "Enter"). `cd` to the folder where you saved the downloaded file in.
 10. Run the following commands and replace the parameter values with yours:
 ```cmd
-java -jar awsVpnLauncher-1.0-jar-with-dependencies.jar config awsRegion <The code of the region you chose>
-java -jar awsVpnLauncher-1.0-jar-with-dependencies.jar config awsKey <Your Access Key ID>
-java -jar awsVpnLauncher-1.0-jar-with-dependencies.jar config awsSecret <Secret access Key>
-java -jar awsVpnLauncher-1.0-jar-with-dependencies.jar config awsKeyPairName <The name of the key pair you created>
-java -jar awsVpnLauncher-1.0-jar-with-dependencies.jar config privateKeyFile C:\path\to\the\private\keyFile.pem
-java -jar awsVpnLauncher-1.0-jar-with-dependencies.jar config openvpnPassword <The password for the vpn server that you wish to use>
+java -jar awsVpnLauncher-1.4-jar-with-dependencies.jar config awsRegion <The code of the region you chose>
+java -jar awsVpnLauncher-1.4-jar-with-dependencies.jar config awsKey <Your Access Key ID>
+java -jar awsVpnLauncher-1.4-jar-with-dependencies.jar config awsSecret <Secret access Key>
+java -jar awsVpnLauncher-1.4-jar-with-dependencies.jar config awsKeyPairName <The name of the key pair you created>
+java -jar awsVpnLauncher-1.4-jar-with-dependencies.jar config privateKeyFile C:\path\to\the\private\keyFile.pem
+java -jar awsVpnLauncher-1.4-jar-with-dependencies.jar config openvpnPassword <The password for the vpn server that you wish to use>
 ```
 
 Note that all of your credentials and passwords will be stored on your hard drive in clear text. Nothing is sent to any server except to Amazon AWS.
@@ -45,12 +45,12 @@ Note that all of your credentials and passwords will be stored on your hard driv
 ## Launch a new instance
 1. Open a terminal
 2. `cd` to the downloaded `jar`-file
-3. Run `java -jar awsVpnLauncher-1.0-jar-with-dependencies.jar launch`
+3. Run `java -jar awsVpnLauncher-1.4-jar-with-dependencies.jar launch`
 
 ## Terminate all running instances
 1. Open a terminal
 2. `cd` to the downloaded `jar`-file
-3. Run `java -jar awsVpnLauncher-1.0-jar-with-dependencies.jar terminate`
+3. Run `java -jar awsVpnLauncher-1.4-jar-with-dependencies.jar terminate`
 
 ## Pricing
 The script itself is free and is provided under the [Apache License v2.0](https://github.com/vatbub/awsVpnLauncher/blob/master/LICENSE.txt). 
