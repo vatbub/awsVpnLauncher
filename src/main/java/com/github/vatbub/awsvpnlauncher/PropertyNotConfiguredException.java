@@ -29,6 +29,6 @@ class PropertyNotConfiguredException extends RuntimeException {
     }
 
     public PropertyNotConfiguredException(Main.Property property) {
-        this("Property " + property.toString() + " is not configured. Run " + Common.getPathAndNameOfCurrentJar() + " config " + property.toString() + " <value> to fix this.");
+        this("Property " + property.toString() + " is not configured. Run " + Common.getInstance().getPathAndNameOfCurrentJar() + " config " + property.toString() + " <value> to fix this.");
     }
 }

@@ -77,7 +77,7 @@ public class Main {
     private static Config projectConfig;
 
     public static void main(String[] args) {
-        Common.setAppName("awsVpnLauncher");
+        Common.getInstance().setAppName("awsVpnLauncher");
         FOKLogger.enableLoggingOfUncaughtExceptions();
         prefs = new Preferences(Main.class.getName());
 
@@ -92,7 +92,7 @@ public class Main {
 
         UpdateChecker.completeUpdate(args, (oldVersion, oldFile) -> {
             if (oldVersion != null) {
-                FOKLogger.info(Main.class.getName(), "Successfully upgraded " + Common.getAppName() + " from v" + oldVersion.toString() + " to v" + Common.getAppVersion());
+                FOKLogger.info(Main.class.getName(), "Successfully upgraded " + Common.getInstance().getAppName() + " from v" + oldVersion.toString() + " to v" + Common.getInstance().getAppVersion());
             }
         });
         List<String> argsAsList = new ArrayList<>(Arrays.asList(args));
@@ -101,17 +101,17 @@ public class Main {
             if (arg.toLowerCase().matches("mockappversion=.*")) {
                 // Set the mock version
                 String version = arg.substring(arg.toLowerCase().indexOf('=') + 1);
-                Common.setMockAppVersion(version);
+                Common.getInstance().setMockAppVersion(version);
                 argsAsList.remove(arg);
             } else if (arg.toLowerCase().matches("mockbuildnumber=.*")) {
                 // Set the mock build number
                 String buildnumber = arg.substring(arg.toLowerCase().indexOf('=') + 1);
-                Common.setMockBuildNumber(buildnumber);
+                Common.getInstance().setMockBuildNumber(buildnumber);
                 argsAsList.remove(arg);
             } else if (arg.toLowerCase().matches("mockpackaging=.*")) {
                 // Set the mock packaging
                 String packaging = arg.substring(arg.toLowerCase().indexOf('=') + 1);
-                Common.setMockPackaging(packaging);
+                Common.getInstance().setMockPackaging(packaging);
                 argsAsList.remove(arg);
             }
         }
@@ -625,9 +625,9 @@ public class Main {
      * Prints the help message to the console
      */
     private static void printHelpMessage() {
-        FOKLogger.info(Main.class.getName(), Common.getAppName() + ", v" + Common.getAppVersion());
+        FOKLogger.info(Main.class.getName(), Common.getInstance().getAppName() + ", v" + Common.getInstance().getAppVersion());
         FOKLogger.info(Main.class.getName(), "Usage:");
-        FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " <command> <options>");
+        FOKLogger.info(Main.class.getName(), "java -jar " + Common.getInstance().getPathAndNameOfCurrentJar() + " <command> <options>");
         FOKLogger.info(Main.class.getName(), "");
         FOKLogger.info(Main.class.getName(), "Valid commands are:");
         FOKLogger.info(Main.class.getName(), "\tlaunch:\tlaunches a new VPN server on AWS EC2.");
@@ -672,10 +672,10 @@ public class Main {
         FOKLogger.info(Main.class.getName(), "The properties awsKeyPairName and privateKeyFile are saved on a per region basis, that means that you can configure several regions and switch the region just by modifying the awsRegion property.");
         FOKLogger.info(Main.class.getName(), "");
         FOKLogger.info(Main.class.getName(), "Examples:");
-        FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " launch");
-        FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " terminate");
-        FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " config awsKey <yourAwsKeyHere>");
-        FOKLogger.info(Main.class.getName(), "java -jar " + Common.getPathAndNameOfCurrentJar() + " getConfig awsKey");
+        FOKLogger.info(Main.class.getName(), "java -jar " + Common.getInstance().getPathAndNameOfCurrentJar() + " launch");
+        FOKLogger.info(Main.class.getName(), "java -jar " + Common.getInstance().getPathAndNameOfCurrentJar() + " terminate");
+        FOKLogger.info(Main.class.getName(), "java -jar " + Common.getInstance().getPathAndNameOfCurrentJar() + " config awsKey <yourAwsKeyHere>");
+        FOKLogger.info(Main.class.getName(), "java -jar " + Common.getInstance().getPathAndNameOfCurrentJar() + " getConfig awsKey");
     }
 
     /**
@@ -828,7 +828,7 @@ public class Main {
     }
 
     private static void setup() {
-        FOKLogger.info(Main.class.getName(), "Welcome to the awsVPNLauncher v" + Common.getAppVersion());
+        FOKLogger.info(Main.class.getName(), "Welcome to the awsVPNLauncher v" + Common.getInstance().getAppVersion());
         FOKLogger.info(Main.class.getName(), "You will now be guided through the setup process.");
         FOKLogger.info(Main.class.getName(), "You will have to do this only once.");
         FOKLogger.info(Main.class.getName(), "If you already did the setup once, setup will override previous values.");
