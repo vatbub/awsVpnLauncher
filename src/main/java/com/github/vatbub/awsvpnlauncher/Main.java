@@ -1,7 +1,7 @@
 package com.github.vatbub.awsvpnlauncher;
 
-/*-
- * #%L
+        /*-
+         * #%L
  * AWSVpnLauncher
  * %%
  * Copyright (C) 2016 - 2017 Frederik Kammel
@@ -18,7 +18,7 @@ package com.github.vatbub.awsvpnlauncher;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * #L%
- */
+         */
 
 
 import com.amazonaws.auth.AWSCredentials;
@@ -119,8 +119,8 @@ public class Main {
         args = argsAsList.toArray(new String[0]);
 
         try {
-            mvnRepoConfig = new Config(new URL("https://www.dropbox.com/s/vnhs4nax2lczccf/mavenRepoConfig.properties?dl=1"), Main.class.getResource("mvnRepoFallbackConfig.properties"), "mvnRepoCachedConfig");
-            projectConfig = new Config(new URL("https://www.dropbox.com/s/d36hwrrufoxfmm7/projectConfig.properties?dl=1"), Main.class.getResource("projectFallbackConfig.properties"), "projectCachedConfig");
+            mvnRepoConfig = new Config(new URL("https://www.dropbox.com/s/vnhs4nax2lczccf/mavenRepoConfig.properties?dl=1"), Main.class.getResource("mvnRepoFallbackConfig.properties"), true, "mvnRepoCachedConfig", true);
+            projectConfig = new Config(new URL("https://www.dropbox.com/s/d36hwrrufoxfmm7/projectConfig.properties?dl=1"), Main.class.getResource("projectFallbackConfig.properties"), true, "projectCachedConfig", true);
         } catch (IOException e) {
             FOKLogger.log(Main.class.getName(), Level.SEVERE, "Could not load the remote config", e);
         }
