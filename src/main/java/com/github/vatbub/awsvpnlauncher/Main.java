@@ -28,11 +28,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.*;
-import com.cloudflare.api.CloudflareAccess;
-import com.cloudflare.api.constants.RecordType;
-import com.cloudflare.api.requests.dns.DNSAddRecord;
-import com.cloudflare.api.requests.dns.DNSDeleteRecord;
-import com.cloudflare.api.results.CloudflareError;
+import com.github.vatbub.awsvpnlauncher.cloudflare.*;
 import com.github.vatbub.commandlineUserPromptProcessor.Prompt;
 import com.github.vatbub.commandlineUserPromptProcessor.parsables.Parsable;
 import com.github.vatbub.commandlineUserPromptProcessor.parsables.ParsableEnum;
@@ -46,9 +42,9 @@ import com.github.vatbub.common.updater.UpdateInfo;
 import com.jcraft.jsch.*;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
-import net.sf.json.JSONObject;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang.SystemUtils;
+import org.json.JSONObject;
 
 import java.awt.*;
 import java.io.*;
@@ -513,11 +509,11 @@ public class Main {
                 try {
                     String cloudflareAPIKey = prefs.getPreference(Property.cloudflareAPIKey);
                     String cloudflareEmail = prefs.getPreference(Property.cloudflareEmail);
-                    String targetDomain = prefs.getPreference(Property.cloudflareTargetDomain);
+                    String targetZoneId = prefs.getPreference(Property.cloudflareTargetZoneId);
                     String subdomain = prefs.getPreference(Property.cloudflareSubdomain);
 
                     CloudflareAccess cloudflareAccess = new CloudflareAccess(cloudflareEmail, cloudflareAPIKey);
-                    DNSAddRecord cloudflareAddDNSRequest = new DNSAddRecord(cloudflareAccess, targetDomain, RecordType.IPV4Address, subdomain, newInstance.getPublicIpAddress());
+                    DNSAddRecord cloudflareAddDNSRequest = new DNSAddRecord(cloudflareAccess, targetZoneId, RecordType.A, subdomain, newInstance.getPublicIpAddress());
 
                     FOKLogger.info(Main.class.getName(), "Creating the DNS record on cloudflare...");
                     JSONObject cloudflareResult = cloudflareAddDNSRequest.executeBasic();
@@ -526,9 +522,9 @@ public class Main {
                         FOKLogger.severe(Main.class.getName(), "Something went wrong while creating the DNS record for the vpn server on Cloudflare.");
                     } else {
                         // Get the record id
-                        String cloudflareRecID = cloudflareResult.getJSONObject("rec").getJSONObject("obj").getString("rec_id");
+                        String cloudflareRecID = cloudflareResult.getJSONObject("result").getString("id");
                         prefs.setPreference("cloudflareRecordID", cloudflareRecID);
-                        finalIP = subdomain + "." + targetDomain;
+                        finalIP = cloudflareResult.getJSONObject("result").getString("name");
                         FOKLogger.info(Main.class.getName(), "The DNS record for the VPN Server was successfully created");
                         FOKLogger.fine(Main.class.getName(), "Cloudflare request result:");
                         FOKLogger.fine(Main.class.getName(), cloudflareResult.toString());
@@ -594,8 +590,8 @@ public class Main {
         try {
             String cloudflareAPIKey = prefs.getPreference(Property.cloudflareAPIKey);
             String cloudflareEmail = prefs.getPreference(Property.cloudflareEmail);
-            String targetDomain = prefs.getPreference(Property.cloudflareTargetDomain);
-            int cloudflareRecordID = Integer.parseInt(prefs.getPreference("cloudflareRecordID", "0"));
+            String targetDomain = prefs.getPreference(Property.cloudflareTargetZoneId);
+            String cloudflareRecordID = prefs.getPreference("cloudflareRecordID", "0");
 
             CloudflareAccess cloudflareAccess = new CloudflareAccess(cloudflareEmail, cloudflareAPIKey);
             DNSDeleteRecord cloudFlareDeleteDNSRecordRequest = new DNSDeleteRecord(cloudflareAccess, targetDomain, cloudflareRecordID);
@@ -878,7 +874,7 @@ public class Main {
      * Possible config properties
      */
     public enum Property {
-        awsKey, awsSecret, awsKeyPairName, awsRegion, privateKeyFile, openvpnPassword, cloudflareAPIKey, cloudflareEmail, cloudflareTargetDomain, cloudflareSubdomain
+        awsKey, awsSecret, awsKeyPairName, awsRegion, privateKeyFile, openvpnPassword, cloudflareAPIKey, cloudflareEmail, cloudflareTargetZoneId, cloudflareSubdomain
     }
 
     /**
