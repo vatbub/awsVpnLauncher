@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>awsVpnLauncher</artifactId>
-    <version>1.5</version>
+    <version>1.6-SNAPSHOT</version>
 
     <repositories>
         <repository>
@@ -33,14 +33,14 @@
     <parent>
         <groupId>com.github.vatbub</groupId>
         <artifactId>parentPom</artifactId>
-        <version>0.0.24</version>
+        <version>0.0.25-SNAPSHOT</version>
     </parent>
 
     <scm>
         <connection>scm:git:git@github.com:vatbub/${gitRepoName}.git</connection>
         <url>https://github.com/vatbub/${gitRepoName}</url>
         <developerConnection>scm:git:git@github.com:vatbub/${gitRepoName}.git</developerConnection>
-        <tag>awsVpnLauncher-1.5</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <issueManagement>
@@ -72,12 +72,12 @@
         <dependency>
             <groupId>com.github.vatbub</groupId>
             <artifactId>common.core</artifactId>
-            <version>0.1.4.1</version>
+            <version>0.1.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.github.vatbub</groupId>
             <artifactId>common.updater</artifactId>
-            <version>0.1.4.1</version>
+            <version>0.1.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.jcraft</groupId>
@@ -107,7 +107,7 @@
         <dependency>
             <groupId>com.github.vatbub</groupId>
             <artifactId>commandlineUserPromptProcessor</artifactId>
-            <version>1.0</version>
+            <version>1.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
