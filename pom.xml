@@ -62,7 +62,7 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-ec2</artifactId>
-            <version>1.11.864</version>
+            <version>1.11.875</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
