@@ -1,7 +1,7 @@
 package com.github.vatbub.awsvpnlauncher;
 
-        /*-
-         * #%L
+/*-
+ * #%L
  * AWSVpnLauncher
  * %%
  * Copyright (C) 2016 - 2017 Frederik Kammel
@@ -9,25 +9,18 @@ package com.github.vatbub.awsvpnlauncher;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * #L%
-         */
+ */
 
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
-import com.amazonaws.services.ec2.model.*;
 import com.github.vatbub.awsvpnlauncher.cloudflare.*;
 import com.github.vatbub.commandlineUserPromptProcessor.Prompt;
 import com.github.vatbub.commandlineUserPromptProcessor.parsables.Parsable;
@@ -45,6 +38,11 @@ import jnr.posix.POSIXFactory;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang.SystemUtils;
 import org.json.JSONObject;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.ec2.model.*;
 
 import java.awt.*;
 import java.io.*;
@@ -57,6 +55,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 
+import static software.amazon.awssdk.regions.Region.*;
+
 public class Main {
     // internal config
     private static final String securityGroupName = "AWSVPNSecurityGroup";
@@ -66,8 +66,8 @@ public class Main {
     private static Instance newInstance;
     private static Session session;
     private static Preferences prefs;
-    private static AmazonEC2 client;
-    private static Regions awsRegion;
+    private static Ec2Client client;
+    private static Region awsRegion;
     private static String vpnPassword;
     private static Config mvnRepoConfig;
     private static Config projectConfig;
@@ -212,9 +212,14 @@ public class Main {
     }
 
     private static void initAWSConnection() {
-        AWSCredentials credentials = new BasicAWSCredentials(prefs.getPreference(Property.awsKey), prefs.getPreference(Property.awsSecret));
-        awsRegion = Regions.valueOf(prefs.getPreference(Property.awsRegion));
-        client = AmazonEC2ClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(credentials)).withRegion(awsRegion).build();
+        AwsBasicCredentials credentials = AwsBasicCredentials.create(prefs.getPreference(Property.awsKey), prefs.getPreference(Property.awsSecret));
+        String regionName = prefs.getPreference(Property.awsRegion);
+        if (isOldRegionName(regionName))
+            regionName = convertOldRegionName(regionName);
+        awsRegion = Region.of(regionName);
+        client = Ec2Client.builder()
+                .region(awsRegion)
+                .credentialsProvider(StaticCredentialsProvider.create(credentials)).build();
     }
 
     /**
@@ -223,56 +228,61 @@ public class Main {
      * @param region The region where the AWS EC2 instance is launched
      * @return The name of the ami to use
      */
-    private static String getAmiId(Regions region) {
-        /*
-        Asia Pacific (Mumbai) 	ami-cdd4aaa2
-        EU (London) 	ami-17c5d373
-        EU (Ireland) 	ami-238b6a5a
-        Asia Pacific (Seoul) 	ami-c98c52a7
-        Asia Pacific (Tokyo) 	ami-dee1fdb9
-        South America (Sao Paulo) 	ami-930673ff
-        Canada (Central) 	ami-c6813ea2
-        Asia Pacific (Singapore) 	ami-81d75de2
-        Asia Pacific (Sydney) 	ami-3cd6c45f
-        EU (Frankfurt) 	ami-17862678
-        US East (N. Virginia) 	ami-f6eed4e0
-        US East (Ohio) 	ami-6d163708
-        US West (N. California) 	ami-091f3069
-        US West (Oregon) 	ami-e346559a
-         */
-
-        switch (region) {
-            case AP_SOUTH_1:
-                return "ami-cdd4aaa2";
-            case EU_WEST_2:
-                return "ami-17c5d373";
-            case EU_WEST_1:
-                return "ami-238b6a5a";
-            case AP_NORTHEAST_2:
-                return "ami-c98c52a7";
-            case AP_NORTHEAST_1:
-                return "ami-dee1fdb9";
-            case SA_EAST_1:
-                return "ami-930673ff";
-            case CA_CENTRAL_1:
-                return "ami-c6813ea2";
-            case AP_SOUTHEAST_1:
-                return "ami-81d75de2";
-            case AP_SOUTHEAST_2:
-                return "ami-3cd6c45f";
-            case EU_CENTRAL_1:
-                return "ami-17862678";
-            case US_EAST_1:
-                return "ami-f6eed4e0";
-            case US_EAST_2:
-                return "ami-6d163708";
-            case US_WEST_1:
-                return "ami-091f3069";
-            case US_WEST_2:
-                return "ami-e346559a";
-            default:
-                throw new RegionNotSupportedException(region);
+    public static String getAmiId(Region region) {
+        if (AP_SOUTH_1.equals(region)) {
+            return "ami-029cb972e1b8a4bca";
+        } else if (EU_WEST_2.equals(region)) {
+            return "ami-056465a2a49aad6d9";
+        } else if (EU_WEST_1.equals(region)) {
+            return "ami-0e1415fedc1664f51";
+        } else if (AP_NORTHEAST_2.equals(region)) {
+            return "ami-0b34e8ed891410f41";
+        } else if (AP_NORTHEAST_1.equals(region)) {
+            return "ami-04f47c2ec43830d77";
+        } else if (SA_EAST_1.equals(region)) {
+            return "ami-04bde880fb57a5227";
+        } else if (CA_CENTRAL_1.equals(region)) {
+            return "ami-00339d8622921f9d1";
+        } else if (AP_SOUTHEAST_1.equals(region)) {
+            return "ami-0a8fdce33ca9cbe51";
+        } else if (AP_SOUTHEAST_2.equals(region)) {
+            return "ami-0bb2699f6638760b5";
+        } else if (EU_CENTRAL_1.equals(region)) {
+            return "ami-0764964fdfe99bc31";
+        } else if (US_GOV_WEST_1.equals(region)) {
+            return "ami-0eaf3c8123abf49df";
+        } else if (US_GOV_EAST_1.equals(region)) {
+            return "ami-055a4e2d85bd07d99";
+        } else if (US_EAST_1.equals(region)) {
+            return "ami-037ff6453f0855c46";
+        } else if (US_EAST_2.equals(region)) {
+            return "ami-04406fdec0f245050";
+        } else if (US_WEST_1.equals(region)) {
+            return "ami-0ce1d8c91d5b9ee92";
+        } else if (US_WEST_2.equals(region)) {
+            return "ami-0d10bccf2f1a6d60b";
+        } else if (EU_WEST_3.equals(region)) {
+            return "ami-0b8d6b68595965460";
+        } else if (EU_NORTH_1.equals(region)) {
+            return "ami-067349b5a5143523d";
+        } else if (EU_SOUTH_1.equals(region)) {
+            return "ami-0b6d15c993d405ed4";
+        } else if (AP_EAST_1.equals(region)) {
+            return "ami-079176f64e2f11364";
+        } else if (ME_SOUTH_1.equals(region)) {
+            return "ami-07223e8af608e248a";
+        } else if (AF_SOUTH_1.equals(region)) {
+            return "ami-0f63dc5cfd49df099";
         }
+        throw new RegionNotSupportedException(region);
+    }
+
+    private static boolean isOldRegionName(String regionName) {
+        return regionName.matches("[A-Z]{2}_[A-Z]+_[0-9]+");
+    }
+
+    private static String convertOldRegionName(String oldName) {
+        return oldName.toLowerCase().replace("_", "-");
     }
 
     /**
@@ -294,49 +304,60 @@ public class Main {
         try {
             // Check if our security group exists already
             FOKLogger.info(Main.class.getName(), "Checking for the required security group...");
-            DescribeSecurityGroupsRequest describeSecurityGroupsRequest = new DescribeSecurityGroupsRequest().withGroupNames(securityGroupName);
+            DescribeSecurityGroupsRequest describeSecurityGroupsRequest =
+                    DescribeSecurityGroupsRequest.builder()
+                            .groupNames(securityGroupName)
+                            .build();
 
             List<String> securityGroups = new ArrayList<>();
             boolean created = false; // will become true if the security group had to be created to avoid duplicate logs
             String securityGroupId;
             try {
-                DescribeSecurityGroupsResult describeSecurityGroupsResult = client.describeSecurityGroups(describeSecurityGroupsRequest);
-                securityGroupId = describeSecurityGroupsResult.getSecurityGroups().get(0).getGroupId();
-            } catch (AmazonEC2Exception e) {
+                DescribeSecurityGroupsResponse describeSecurityGroupsResult = client.describeSecurityGroups(describeSecurityGroupsRequest);
+                securityGroupId = describeSecurityGroupsResult.securityGroups().get(0).groupId();
+            } catch (Ec2Exception e) {
+                // TODO: Test if this is the actual exception
                 // Security group does not exist, create the security group
                 created = true;
                 FOKLogger.info(Main.class.getName(), "Creating the required security group...");
-                CreateSecurityGroupRequest createSecurityGroupRequest = new CreateSecurityGroupRequest()
-                        .withGroupName(securityGroupName)
-                        .withDescription("This security group was automatically created to run a OpenVPN Access Server.");
-                CreateSecurityGroupResult createSecurityGroupResult = client.createSecurityGroup(createSecurityGroupRequest);
+                CreateSecurityGroupRequest createSecurityGroupRequest = CreateSecurityGroupRequest.builder()
+                        .groupName(securityGroupName)
+                        .description("This security group was automatically created to run a OpenVPN Access Server.")
+                        .build();
+                CreateSecurityGroupResponse createSecurityGroupResult = client.createSecurityGroup(createSecurityGroupRequest);
 
-                securityGroupId = createSecurityGroupResult.getGroupId();
+                securityGroupId = createSecurityGroupResult.groupId();
 
-                IpRange ipRange = new IpRange().withCidrIp("0.0.0.0/0");
-                IpPermission sshPermission1 = new IpPermission().withIpv4Ranges(ipRange)
-                        .withIpProtocol("tcp")
-                        .withFromPort(22)
-                        .withToPort(22);
-                IpPermission sshPermission2 = new IpPermission().withIpv4Ranges(ipRange)
-                        .withIpProtocol("tcp")
-                        .withFromPort(943)
-                        .withToPort(943);
-                IpPermission httpsPermission1 = new IpPermission().withIpv4Ranges(ipRange)
-                        .withIpProtocol("tcp")
-                        .withFromPort(443)
-                        .withToPort(443);
-                IpPermission httpsPermission2 = new IpPermission().withIpv4Ranges(ipRange)
-                        .withIpProtocol("udp")
-                        .withFromPort(1194)
-                        .withToPort(1194);
+                IpRange ipRange = IpRange.builder().cidrIp("0.0.0.0/0").build();
+                IpPermission sshPermission1 = IpPermission.builder().ipRanges(ipRange)
+                        .ipProtocol("tcp")
+                        .fromPort(22)
+                        .toPort(22)
+                        .build();
+                IpPermission sshPermission2 = IpPermission.builder().ipRanges(ipRange)
+                        .ipProtocol("tcp")
+                        .fromPort(943)
+                        .toPort(943)
+                        .build();
+                IpPermission httpsPermission1 = IpPermission.builder().ipRanges(ipRange)
+                        .ipProtocol("tcp")
+                        .fromPort(443)
+                        .toPort(443)
+                        .build();
+                IpPermission httpsPermission2 = IpPermission.builder().ipRanges(ipRange)
+                        .ipProtocol("udp")
+                        .fromPort(1194)
+                        .toPort(1194)
+                        .build();
 
                 AuthorizeSecurityGroupIngressRequest authorizeSecurityGroupIngressRequest =
-                        new AuthorizeSecurityGroupIngressRequest().withGroupName(securityGroupName)
-                                .withIpPermissions(sshPermission1)
-                                .withIpPermissions(sshPermission2)
-                                .withIpPermissions(httpsPermission1)
-                                .withIpPermissions(httpsPermission2);
+                        AuthorizeSecurityGroupIngressRequest.builder()
+                                .groupName(securityGroupName)
+                                .ipPermissions(sshPermission1)
+                                .ipPermissions(sshPermission2)
+                                .ipPermissions(httpsPermission1)
+                                .ipPermissions(httpsPermission2)
+                                .build();
 
                 // retry while the security group is not yet ready
                 int retries = 0;
@@ -353,7 +374,8 @@ public class Main {
                             client.authorizeSecurityGroupIngress(authorizeSecurityGroupIngressRequest);
                             // no exception => we made it
                             requestIsFailing = false;
-                        } catch (AmazonEC2Exception e2) {
+                        } catch (Ec2Exception e2) {
+                            // TODO: Check if this is the actual exception
                             FOKLogger.info(Main.class.getName(), "Still waiting for the security group to be created, api error message is currently: " + e2.getMessage());
                             requestIsFailing = true;
                         }
@@ -370,14 +392,18 @@ public class Main {
             securityGroups.add(securityGroupId);
 
             FOKLogger.info(Main.class.getName(), "Creating the RunInstanceRequest...");
-            RunInstancesRequest request = new RunInstancesRequest(getAmiId(awsRegion), 1, 1);
-            request.setInstanceType(InstanceType.T2Micro);
-            request.setKeyName(prefs.getPreference(Property.awsKeyPairName));
-            request.setSecurityGroupIds(securityGroups);
+            RunInstancesRequest request = RunInstancesRequest.builder()
+                    .imageId(getAmiId(awsRegion))
+                    .minCount(1)
+                    .maxCount(1)
+                    .instanceType(InstanceType.T2_MICRO)
+                    .keyName(prefs.getPreference(Property.awsKeyPairName))
+                    .securityGroupIds(securityGroups)
+                    .build();
 
             FOKLogger.info(Main.class.getName(), "Starting the EC2 instance...");
-            RunInstancesResult result = client.runInstances(request);
-            List<Instance> instances = result.getReservation().getInstances();
+            RunInstancesResponse result = client.runInstances(request);
+            List<Instance> instances = result.instances();
 
             // SSH config
             FOKLogger.info(Main.class.getName(), "Configuring SSH...");
@@ -391,20 +417,17 @@ public class Main {
                 // write the instance id to a properties file to be able to terminate it later on again
                 prefs.reload();
                 if (prefs.getPreference("instanceIDs", "").equals("")) {
-                    prefs.setPreference("instanceIDs", instance.getInstanceId());
+                    prefs.setPreference("instanceIDs", instance.instanceId());
                 } else {
-                    prefs.setPreference("instanceIDs", prefs.getPreference("instanceIDs", "") + ";" + instance.getInstanceId());
+                    prefs.setPreference("instanceIDs", prefs.getPreference("instanceIDs", "") + ";" + instance.instanceId());
                 }
 
                 // Connect to the instance using ssh
                 FOKLogger.info(Main.class.getName(), "Waiting for the instance to boot...");
 
                 long lastPrintTime = System.currentTimeMillis();
-                DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
-                List<String> instanceId = new ArrayList<>(1);
-                instanceId.add(instance.getInstanceId());
-                describeInstancesRequest.setInstanceIds(instanceId);
-                DescribeInstancesResult describeInstancesResult;
+                DescribeInstancesRequest describeInstancesRequest = DescribeInstancesRequest.builder().instanceIds(instance.instanceId()).build();
+                DescribeInstancesResponse describeInstancesResult;
                 newInstance = instance;
 
                 do {
@@ -413,21 +436,21 @@ public class Main {
                     if (System.currentTimeMillis() - lastPrintTime >= Math.pow(2, retries) * 100) {
                         retries = retries + 1;
                         describeInstancesResult = client.describeInstances(describeInstancesRequest);
-                        newInstance = describeInstancesResult.getReservations().get(0).getInstances().get(0);
+                        newInstance = describeInstancesResult.reservations().get(0).instances().get(0);
                         lastPrintTime = System.currentTimeMillis();
-                        if (newInstance.getState().getCode() != 16) {
-                            FOKLogger.info(Main.class.getName(), "Still waiting for the instance to boot, current instance state is " + newInstance.getState().getName());
+                        if (newInstance.state().code() != 16) {
+                            FOKLogger.info(Main.class.getName(), "Still waiting for the instance to boot, current instance state is " + newInstance.state().name());
                         }
                     }
-                } while (newInstance.getState().getCode() != 16);
+                } while (newInstance.state().code() != 16);
 
-                FOKLogger.info(Main.class.getName(), "Instance is " + newInstance.getState().getName());
+                FOKLogger.info(Main.class.getName(), "Instance is " + newInstance.state().name());
 
                 // generate the ssh ip of the instance
-                String sshIp = newInstance.getPublicDnsName();
+                String sshIp = newInstance.publicDnsName();
 
-                FOKLogger.info(Main.class.getName(), "The instance id is " + newInstance.getInstanceId());
-                FOKLogger.info(Main.class.getName(), "The instance ip is " + newInstance.getPublicIpAddress());
+                FOKLogger.info(Main.class.getName(), "The instance id is " + newInstance.instanceId());
+                FOKLogger.info(Main.class.getName(), "The instance ip is " + newInstance.publicIpAddress());
                 FOKLogger.info(Main.class.getName(), "Connecting using ssh to " + sshUsername + "@" + sshIp);
                 FOKLogger.info(Main.class.getName(), "The instance will need some time to configure ssh on its end so some connection timeouts are normal");
                 boolean retry;
@@ -501,7 +524,7 @@ public class Main {
             FOKLogger.info(Main.class.getName(), "Disconnecting the SSH-session...");
             FOKLogger.info(Main.class.getName(), "----------------------------------------------------------------------");
 
-            String finalIP = newInstance.getPublicIpAddress();
+            String finalIP = newInstance.publicIpAddress();
 
             if (!prefs.getPreference("cloudflareRecordID", "0").equals("0")) {
                 FOKLogger.severe(Main.class.getName(), "Cannot create a new DNS record as another instance is already using it.");
@@ -513,7 +536,7 @@ public class Main {
                     String subdomain = prefs.getPreference(Property.cloudflareSubdomain);
 
                     CloudflareAccess cloudflareAccess = new CloudflareAccess(cloudflareEmail, cloudflareAPIKey);
-                    DNSAddRecord cloudflareAddDNSRequest = new DNSAddRecord(cloudflareAccess, targetZoneId, RecordType.A, subdomain, newInstance.getPublicIpAddress());
+                    DNSAddRecord cloudflareAddDNSRequest = new DNSAddRecord(cloudflareAccess, targetZoneId, RecordType.A, subdomain, newInstance.publicIpAddress());
 
                     FOKLogger.info(Main.class.getName(), "Creating the DNS record on cloudflare...");
                     JSONObject cloudflareResult = cloudflareAddDNSRequest.executeBasic();
@@ -571,19 +594,13 @@ public class Main {
         }
 
         FOKLogger.info(Main.class.getName(), "Sending the termination request to AWS EC2...");
-        List<String> instanceIds = Arrays.asList(instanceIdsPrefValue.split(";"));
+        String[] instanceIds = instanceIdsPrefValue.split(";");
         for (String instanceId : instanceIds) {
-            try {
-                List<String> instanceIdCopy = new ArrayList<>();
-                instanceIdCopy.add(instanceId);
-                TerminateInstancesRequest request = new TerminateInstancesRequest(instanceIdCopy);
-                TerminateInstancesResult result = client.terminateInstances(request);
+            TerminateInstancesRequest request = TerminateInstancesRequest.builder().instanceIds(instanceId).build();
+            TerminateInstancesResponse result = client.terminateInstances(request);
 
-                for (InstanceStateChange item : result.getTerminatingInstances()) {
-                    FOKLogger.info(Main.class.getName(), "Terminated instance: " + item.getInstanceId() + ", instance state changed from " + item.getPreviousState() + " to " + item.getCurrentState());
-                }
-            } catch (AmazonEC2Exception e) {
-                FOKLogger.severe(Main.class.getName(), "Could not terminate instance " + instanceId + ": " + e.getMessage());
+            for (InstanceStateChange item : result.terminatingInstances()) {
+                FOKLogger.info(Main.class.getName(), "Terminated instance: " + item.instanceId() + ", instance state changed from " + item.previousState() + " to " + item.currentState());
             }
         }
 
@@ -731,14 +748,13 @@ public class Main {
     private static void ssh(String instanceID) {
         try {
             File privateKey = new File(prefs.getPreference(Property.privateKeyFile));
-            DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
-            List<String> instanceId = new ArrayList<>(1);
-            instanceId.add(instanceID);
-            describeInstancesRequest.setInstanceIds(instanceId);
-            DescribeInstancesResult describeInstancesResult = client.describeInstances(describeInstancesRequest);
-            Instance instance = describeInstancesResult.getReservations().get(0).getInstances().get(0);
+            DescribeInstancesRequest describeInstancesRequest = DescribeInstancesRequest.builder()
+                    .instanceIds(instanceID)
+                    .build();
+            DescribeInstancesResponse describeInstancesResult = client.describeInstances(describeInstancesRequest);
+            Instance instance = describeInstancesResult.reservations().get(0).instances().get(0);
 
-            String sshIp = instance.getPublicDnsName();
+            String sshIp = instance.publicDnsName();
 
             // SSH config
             FOKLogger.info(Main.class.getName(), "Configuring SSH...");

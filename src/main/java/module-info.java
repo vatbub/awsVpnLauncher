@@ -20,8 +20,6 @@
 module awsVpnLauncher {
     requires unirest.java;
     requires json;
-    requires aws.java.sdk.core;
-    requires aws.java.sdk.ec2;
     requires commandlineUserPromptProcessor;
     requires common.core;
     requires common.updater;
@@ -32,4 +30,7 @@ module awsVpnLauncher {
     requires java.datatransfer;
     requires java.logging;
     requires java.desktop;
+    requires software.amazon.awssdk.services.ec2;
+    requires software.amazon.awssdk.auth;
+    requires software.amazon.awssdk.regions;
 }

@@ -21,7 +21,7 @@ package com.github.vatbub.awsvpnlauncher;
  */
 
 
-import com.amazonaws.regions.Regions;
+import software.amazon.awssdk.regions.Region;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class RegionNotSupportedException extends RuntimeException {
@@ -41,7 +41,7 @@ public class RegionNotSupportedException extends RuntimeException {
         super(message, cause, enableSuppression, writableStackTrace);
     }
 
-    public RegionNotSupportedException(Regions region) {
-        this("Region " + region.getName() + " not supported for this operation.");
+    public RegionNotSupportedException(Region region) {
+        this("Region " + region.id() + " not supported for this operation.");
     }
 }
