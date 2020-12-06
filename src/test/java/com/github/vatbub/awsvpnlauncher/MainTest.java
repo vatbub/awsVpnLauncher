@@ -48,38 +48,40 @@ public class MainTest {
     public void amiIdsCorrectTest() {
         Preferences prefs = new Preferences(Main.class.getName());
 
-        Map<Region, TestResult> results = new HashMap<>();
+        Map<TestCase, TestResult> results = new HashMap<>();
 
-        for (Region region : Region.regions()) {
-            String amiId;
-            try {
-                amiId = Main.getAmiId(region);
-            } catch (RegionNotSupportedException e) {
-                continue;
-            }
+        for (License license : License.values()) {
+            for (Region region : Region.regions()) {
+                String amiId;
+                try {
+                    amiId = AmiIds.getAmiId(region, license);
+                } catch (RegionNotSupportedException e) {
+                    continue;
+                }
 
-            AwsCredentials credentials = AwsBasicCredentials.create(prefs.getPreference(Main.Property.awsKey), prefs.getPreference(Main.Property.awsSecret));
-            Ec2Client client = Ec2Client.builder()
-                    .region(region)
-                    .credentialsProvider(StaticCredentialsProvider.create(credentials))
-                    .build();
+                AwsCredentials credentials = AwsBasicCredentials.create(prefs.getPreference(Main.Property.awsKey), prefs.getPreference(Main.Property.awsSecret));
+                Ec2Client client = Ec2Client.builder()
+                        .region(region)
+                        .credentialsProvider(StaticCredentialsProvider.create(credentials))
+                        .build();
 
-            DescribeImagesRequest request = DescribeImagesRequest.builder().imageIds(amiId).build();
-            try {
-                DescribeImagesResponse result = client.describeImages(request);
-                Assert.assertEquals(1, result.images().size());
-                results.put(region, new TestResult(result.images().size(), null));
-            } catch (Exception e) {
-                results.put(region, new TestResult(-1, e));
+                DescribeImagesRequest request = DescribeImagesRequest.builder().imageIds(amiId).build();
+                try {
+                    DescribeImagesResponse result = client.describeImages(request);
+                    Assert.assertEquals(1, result.images().size());
+                    results.put(new TestCase(license, region), new TestResult(result.images().size(), null));
+                } catch (Exception e) {
+                    results.put(new TestCase(license, region), new TestResult(-1, e));
+                }
             }
         }
 
         long numberOfSuccessfulRegions = results.values().stream().filter(testResult -> testResult.numberOfFoundAmis == 1).count();
-        FOKLogger.info(MainTest.class.getName(), "Successful regions: " + numberOfSuccessfulRegions + ", unsuccessful regions: " + (results.size() - numberOfSuccessfulRegions));
+        FOKLogger.info(MainTest.class.getName(), "Successful test cases: " + numberOfSuccessfulRegions + ", unsuccessful test cases: " + (results.size() - numberOfSuccessfulRegions));
         if (numberOfSuccessfulRegions == results.size()) return;
 
         FOKLogger.severe(MainTest.class.getName(), "Unsuccessful regions:");
-        for (Map.Entry<Region, TestResult> result : results.entrySet()) {
+        for (Map.Entry<TestCase, TestResult> result : results.entrySet()) {
             if (result.getValue().getNumberOfFoundAmis() == 1) continue;
 
             String reason;
@@ -88,7 +90,33 @@ public class MainTest {
             else
                 reason = "number of found amis was " + result.getValue().getNumberOfFoundAmis() + ", expected 1";
 
-            FOKLogger.severe(MainTest.class.getName(), result.getKey().id() + " - Reason: " + reason);
+            FOKLogger.severe(MainTest.class.getName(), "License: " + result.getKey().getLicense() + ", Region : " + result.getKey().getRegion().id() + " - Reason: " + reason);
+        }
+    }
+
+    private static class TestCase {
+        private License license;
+        private Region region;
+
+        public TestCase(License license, Region region) {
+            this.license = license;
+            this.region = region;
+        }
+
+        public License getLicense() {
+            return license;
+        }
+
+        public void setLicense(License license) {
+            this.license = license;
+        }
+
+        public Region getRegion() {
+            return region;
+        }
+
+        public void setRegion(Region region) {
+            this.region = region;
         }
     }
 

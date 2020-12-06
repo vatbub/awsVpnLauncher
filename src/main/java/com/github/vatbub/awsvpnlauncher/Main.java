@@ -55,8 +55,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 
-import static software.amazon.awssdk.regions.Region.*;
-
 public class Main {
     // internal config
     private static final String securityGroupName = "AWSVPNSecurityGroup";
@@ -222,61 +220,6 @@ public class Main {
                 .credentialsProvider(StaticCredentialsProvider.create(credentials)).build();
     }
 
-    /**
-     * Returns the name of the ami to use
-     *
-     * @param region The region where the AWS EC2 instance is launched
-     * @return The name of the ami to use
-     */
-    public static String getAmiId(Region region) {
-        if (AP_SOUTH_1.equals(region)) {
-            return "ami-029cb972e1b8a4bca";
-        } else if (EU_WEST_2.equals(region)) {
-            return "ami-056465a2a49aad6d9";
-        } else if (EU_WEST_1.equals(region)) {
-            return "ami-0e1415fedc1664f51";
-        } else if (AP_NORTHEAST_2.equals(region)) {
-            return "ami-0b34e8ed891410f41";
-        } else if (AP_NORTHEAST_1.equals(region)) {
-            return "ami-04f47c2ec43830d77";
-        } else if (SA_EAST_1.equals(region)) {
-            return "ami-04bde880fb57a5227";
-        } else if (CA_CENTRAL_1.equals(region)) {
-            return "ami-00339d8622921f9d1";
-        } else if (AP_SOUTHEAST_1.equals(region)) {
-            return "ami-0a8fdce33ca9cbe51";
-        } else if (AP_SOUTHEAST_2.equals(region)) {
-            return "ami-0bb2699f6638760b5";
-        } else if (EU_CENTRAL_1.equals(region)) {
-            return "ami-0764964fdfe99bc31";
-        } else if (US_GOV_WEST_1.equals(region)) {
-            return "ami-0eaf3c8123abf49df";
-        } else if (US_GOV_EAST_1.equals(region)) {
-            return "ami-055a4e2d85bd07d99";
-        } else if (US_EAST_1.equals(region)) {
-            return "ami-037ff6453f0855c46";
-        } else if (US_EAST_2.equals(region)) {
-            return "ami-04406fdec0f245050";
-        } else if (US_WEST_1.equals(region)) {
-            return "ami-0ce1d8c91d5b9ee92";
-        } else if (US_WEST_2.equals(region)) {
-            return "ami-0d10bccf2f1a6d60b";
-        } else if (EU_WEST_3.equals(region)) {
-            return "ami-0b8d6b68595965460";
-        } else if (EU_NORTH_1.equals(region)) {
-            return "ami-067349b5a5143523d";
-        } else if (EU_SOUTH_1.equals(region)) {
-            return "ami-0b6d15c993d405ed4";
-        } else if (AP_EAST_1.equals(region)) {
-            return "ami-079176f64e2f11364";
-        } else if (ME_SOUTH_1.equals(region)) {
-            return "ami-07223e8af608e248a";
-        } else if (AF_SOUTH_1.equals(region)) {
-            return "ami-0f63dc5cfd49df099";
-        }
-        throw new RegionNotSupportedException(region);
-    }
-
     private static boolean isOldRegionName(String regionName) {
         return regionName.matches("[A-Z]{2}_[A-Z]+_[0-9]+");
     }
@@ -316,7 +259,6 @@ public class Main {
                 DescribeSecurityGroupsResponse describeSecurityGroupsResult = client.describeSecurityGroups(describeSecurityGroupsRequest);
                 securityGroupId = describeSecurityGroupsResult.securityGroups().get(0).groupId();
             } catch (Ec2Exception e) {
-                // TODO: Test if this is the actual exception
                 // Security group does not exist, create the security group
                 created = true;
                 FOKLogger.info(Main.class.getName(), "Creating the required security group...");
@@ -353,10 +295,7 @@ public class Main {
                 AuthorizeSecurityGroupIngressRequest authorizeSecurityGroupIngressRequest =
                         AuthorizeSecurityGroupIngressRequest.builder()
                                 .groupName(securityGroupName)
-                                .ipPermissions(sshPermission1)
-                                .ipPermissions(sshPermission2)
-                                .ipPermissions(httpsPermission1)
-                                .ipPermissions(httpsPermission2)
+                                .ipPermissions(sshPermission1, sshPermission2, httpsPermission1, httpsPermission2)
                                 .build();
 
                 // retry while the security group is not yet ready
@@ -375,7 +314,6 @@ public class Main {
                             // no exception => we made it
                             requestIsFailing = false;
                         } catch (Ec2Exception e2) {
-                            // TODO: Check if this is the actual exception
                             FOKLogger.info(Main.class.getName(), "Still waiting for the security group to be created, api error message is currently: " + e2.getMessage());
                             requestIsFailing = true;
                         }
@@ -391,9 +329,16 @@ public class Main {
 
             securityGroups.add(securityGroupId);
 
+            int minUserCount;
+            try {
+                minUserCount = Integer.parseInt(prefs.getPreference(Property.minUserCount));
+            } catch (PropertyNotConfiguredException e) {
+                minUserCount = 2;
+            }
+
             FOKLogger.info(Main.class.getName(), "Creating the RunInstanceRequest...");
             RunInstancesRequest request = RunInstancesRequest.builder()
-                    .imageId(getAmiId(awsRegion))
+                    .imageId(AmiIds.getAmiId(awsRegion, License.withMinNumberOfUsers(minUserCount)))
                     .minCount(1)
                     .maxCount(1)
                     .instanceType(InstanceType.T2_MICRO)
@@ -664,6 +609,7 @@ public class Main {
         FOKLogger.info(Main.class.getName(), "\tawsKey: The key to use to authenticate on aws. The key must have full access to EC2. Your aws credentials are stored in plain text on your hard drive.");
         FOKLogger.info(Main.class.getName(), "\tawsSecret: The secret string that corresponds to the awsKey. Your aws credentials are stored in plain text on your hard drive.");
         FOKLogger.info(Main.class.getName(), "\tawsKeyPairName: The name of the Public/Private keypair to be used to authenticate on the newly created EC2 instances as shown in the EC2 management console");
+        FOKLogger.info(Main.class.getName(), "\tminUserCount: The amount of users that the instance shall support. Defaults to 2 (free software license). Max value: 500. Beware: The more users are selected the higher the license cost for OpenVPN will be.");
         FOKLogger.info(Main.class.getName(), "\tawsRegion: The region where you want your VPN to be located. Can be either: (Only specify the key of the region like US_EAST_1, the city name is just for your orientation");
         FOKLogger.info(Main.class.getName(), "\t\tUS_EAST_1 (Virginia)");
         FOKLogger.info(Main.class.getName(), "\t\tUS_EAST_2 (Ohio)");
@@ -890,7 +836,7 @@ public class Main {
      * Possible config properties
      */
     public enum Property {
-        awsKey, awsSecret, awsKeyPairName, awsRegion, privateKeyFile, openvpnPassword, cloudflareAPIKey, cloudflareEmail, cloudflareTargetZoneId, cloudflareSubdomain
+        awsKey, awsSecret, awsKeyPairName, awsRegion, privateKeyFile, openvpnPassword, cloudflareAPIKey, cloudflareEmail, cloudflareTargetZoneId, cloudflareSubdomain, minUserCount
     }
 
     /**
